@@ -1,0 +1,159 @@
+<!--بنسوي اول ثلاث SPRINT-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ride-Sharing</title>
+    <style>
+    body {
+      background-color: #f8f3ee; /* بيج فاتح */
+      font-family: "Poppins", sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    section {
+      display: none;
+      background-color: #fffdf9; /* درجة بيج أفتح */
+      border: 1px solid #ddd0c8;
+      border-radius: 10px;
+      padding: 30px;
+      width: 350px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      text-align: center;
+      animation: fadeIn 0.4s ease-in-out;
+    }
+
+    h2 {
+      color: #8b7355;
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 90%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #d5c4aa;
+      border-radius: 5px;
+      background-color: #fff;
+    }
+
+    button {
+      background-color: #cbb796; /* بيج متوسط */
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      margin-top: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background-color: #b29a75;
+    }
+
+    a {
+      color: #8b7355;
+      text-decoration: none;
+      font-size: 0.9em;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(-10px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+  </style>
+</head>
+<body>
+   <!-- Login Page -->
+  <section id="login">
+    <h2>Login</h2>
+    <form>
+      <label>Email:</label><br>
+      <input type="email" placeholder="Enter your email"><br><br>
+
+      <label>Password:</label><br>
+      <input type="password" placeholder="Enter your password"><br><br>
+
+      <button type="button" onclick="show('dashboard')">Login</button><br><br>
+
+      <a href="#" onclick="show('register')">Create Account</a> |
+      <a href="#" onclick="show('forgot')">Forgot Password?</a>
+    </form>
+  </section>
+
+  <!-- Register Page -->
+  <section id="register" style="display:none;">
+    <h2>Register</h2>
+    <form>
+      <label>Full Name:</label><br>
+      <input type="text" placeholder="Enter your full name"><br><br>
+
+      <label>University Email:</label><br>
+      <input type="email" placeholder="example@university.edu"><br><br>
+
+      <label>Password:</label><br>
+      <input type="password" placeholder="Create a password"><br><br>
+
+      <label>Confirm Password:</label><br>
+      <input type="password" placeholder="Confirm your password"><br><br>
+
+      <button type="submit">Register</button><br><br>
+      <a href="#" onclick="show('login')">Back to Login</a>
+    </form>
+  </section>
+
+  <!-- Forgot Password Page -->
+  <section id="forgot" style="display:none;">
+    <h2>Forgot Password</h2>
+    <form>
+      <label>University Email:</label><br>
+      <input type="email" placeholder="Enter your registered email"><br><br>
+      <button type="submit">Send Reset Link</button><br><br>
+      <a href="#" onclick="show('login')">Back to Login</a>
+    </form>
+  </section>
+
+  <!-- Dashboard Page -->
+  <section id="dashboard" style="display:none;">
+    <h2>Welcome, Student!</h2>
+    <p>You are logged in.</p>
+    <button onclick="show('change')">Change Password</button>
+    <button onclick="show('login')">Logout</button>
+  </section>
+
+  <!-- Change Password Page -->
+  <section id="change" style="display:none;">
+    <h2>Change Password</h2>
+    <form>
+      <label>Current Password:</label><br>
+      <input type="password" placeholder="Enter current password"><br><br>
+
+      <label>New Password:</label><br>
+      <input type="password" placeholder="Enter new password"><br><br>
+
+      <label>Confirm New Password:</label><br>
+      <input type="password" placeholder="Confirm new password"><br><br>
+
+      <button type="submit">Update Password</button><br><br>
+      <a href="#" onclick="show('dashboard')">Back to Dashboard</a>
+    </form>
+  </section>
+
+  <script>
+    function show(id) {
+      document.querySelectorAll('section').forEach(sec => sec.style.display = 'none');
+      document.getElementById(id).style.display = 'block';
+    }
+  </script>
+</body>
+</html>
