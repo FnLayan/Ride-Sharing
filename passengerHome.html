@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>الصفحة الرئيسية (الراكب)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+  :root{
+    --bg:#f8f3ee; 
+    --white:#ffffff; 
+    --accent:#cbb796; 
+    --accent-hover:#b29a75;
+    --border:#ddd0c8;
+    --text:#3b2f24; 
+    --muted:#7a6a57;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; 
+    min-height:100vh; 
+    display:flex; 
+    align-items:center; 
+    justify-content:center;
+    background:var(--bg); 
+    font-family:'Tajawal',sans-serif; 
+    color:var(--text);
+  }
+
+  .shell{
+    width:min(900px,95vw);
+    background:var(--white);
+    border:1px solid var(--border);
+    border-radius:18px;
+    box-shadow:0 8px 25px rgba(0,0,0,.1);
+    padding:0;
+    overflow:visible; /*إعدادت القائمه الجانبيه*/
+    min-height:440px;          
+    position:relative;
+  }
+
+  /* العنوان */
+  .header{
+    background:var(--accent);
+    color:var(--white);
+    text-align:center;
+    font-weight:700;
+    font-size:22px;
+    padding:14px;
+    border-radius:18px 18px 0 0;
+  }
+
+  .content{
+    padding:32px 26px;
+    text-align:center;
+  }
+
+  .lead{
+    color:#5b4d3f;
+    line-height:1.9;
+    font-size:16px;
+    margin-bottom:25px;
+  }
+
+  .explore-btn{
+    background:var(--accent);
+    color:#fff;
+    font-weight:700;
+    border:none;
+    border-radius:14px;
+    padding:14px 30px;
+    cursor:pointer;
+    font-size:16px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.1);
+    transition:background 0.25s ease, transform 0.25s ease;
+  }
+  .explore-btn:hover{
+    background:var(--accent-hover);
+    transform:translateY(-2px);
+  }
+
+  /* زر القائمه الجانبيه */
+  .ham{
+    position:absolute; 
+    top:12px; 
+    right:14px; 
+    width:40px; 
+    height:40px; 
+    border-radius:10px;
+    background:var(--white); 
+    border:1px solid var(--border);
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    cursor:pointer;
+    box-shadow:0 3px 10px rgba(0,0,0,.06);
+  }
+  .ham span, .ham span:before, .ham span:after{
+    display:block; width:18px; height:2px; background:var(--muted); content:"";
+    position:relative; border-radius:2px;
+  }
+  .ham span:before{ position:absolute; right:0; top:-6px; }
+  .ham span:after{ position:absolute; right:0; top:6px; }
+
+  /* القائمه نفسها */
+  .menuSheet{
+    position:absolute;
+    top:12px;
+    right:0;
+    bottom:12px;
+    width:320px;
+    background:#f5efe6;
+    border-left:1px solid var(--border);
+    border-radius:16px 0 0 16px;
+    box-shadow:-10px 0 24px rgba(0,0,0,.06);
+    display:none;
+    padding:18px;
+    z-index:3;
+    opacity:0;
+    transform:translateX(40px);
+    transition:opacity .25s ease, transform .25s ease;
+  }
+  .menuSheet.open{display:block; opacity:1; transform:translateX(0);}
+  .menuSheet h3{ margin:6px 0 14px; color:#2f281f; text-align:right; }
+  .m{
+    width:100%; padding:13px 16px; margin:12px 0;
+    border:none; border-radius:14px; cursor:pointer;
+    background:var(--accent); color:#fff; font-weight:700;
+    box-shadow:0 6px 16px rgba(0,0,0,.06);
+  }
+  .m:hover{ background:var(--accent-hover); }
+
+  @media (max-width:640px){
+    .menuSheet{ width:86vw; }
+    .header{ font-size:20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="header">
+    الصفحة الرئيسية (الراكب)
+    <button class="ham" aria-label="القائمة" onclick="toggleMenu()"><span></span></button>
+  </div>
+
+  <div class="content">
+    <p class="lead">مرحبًا بك! يمكنك استكشاف الرحلات المتاحة من هنا.</p>
+    <button class="explore-btn" onclick="go('explore.html')"> استكشاف الرحلات</button>
+  </div>
+
+  <!-- القائمه الجانبية-->
+  <aside id="menuSheet" class="menuSheet" aria-hidden="true">
+    <h3>القائمة</h3>
+    <button id="profileBtn" class="m" onclick="go('profile.html')">الملف الشخصي</button>
+    <button id="historyBtn" class="m" onclick="go('ride-history.html')">سجل الرحلات</button>
+    <button id="reportsBtn" class="m" onclick="go('reports.html')">بلاغاتي</button>
+    <button id="helpBtn" class="m" onclick="go('help-center.html')">مركز المساعدة</button>
+  </aside>
+</div>
+
+<script>
+  function toggleMenu(){
+    const s = document.getElementById('menuSheet');
+    const isOpen = s.classList.contains('open');
+    if(isOpen){
+      s.classList.remove('open');
+      setTimeout(()=>{ s.style.display='none'; }, 250);
+    } else {
+      s.style.display='block';
+      setTimeout(()=>{ s.classList.add('open'); }, 10);
+    }
+    s.setAttribute('aria-hidden', isOpen ? 'true' : 'false');
+  }
+  function go(url){ location.href = url; }
+</script>
+
+</body>
+</html>
