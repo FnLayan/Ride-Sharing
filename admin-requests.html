@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>طلبات السائقين</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{--bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;--accent:#cbb796;--accent-hover:#b29a75;--text:#3b2f24;--muted:#7a6a57;}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);font-family:'Tajawal',sans-serif;color:var(--text)}
+    .container{width:680px;max-width:96%;padding:22px;border-radius:12px;background:var(--card);border:1px solid var(--border);box-shadow:0 8px 26px rgba(0,0,0,.08);text-align:right}
+    h1{margin:0 0 14px;font-size:20px;color:var(--muted);text-align:center}
+    .btn{display:inline-block;background:var(--accent);color:#fff;padding:10px 16px;border-radius:8px;border:none;cursor:pointer;margin-top:10px;transition:.2s;text-decoration:none;font-weight:600}
+    .btn:hover{background:var(--accent-hover)}
+    .row{display:flex;gap:8px;margin-top:10px}.row .btn{flex:1}
+    .status{margin-top:8px;padding:8px;border-radius:6px;font-size:13px}
+    .success{background:rgba(108,169,99,.12);color:#256029;border:1px solid rgba(108,169,99,.2)}
+    .warn{background:rgba(221,164,74,.08);color:#7a580f;border:1px solid rgba(221,164,74,.15)}
+    .error{background:rgba(206,86,86,.08);color:#7a1f1f;border:1px solid rgba(206,86,86,.12)}
+    #adminRequests .admin-table{ width:100%; border-collapse:collapse; table-layout:fixed; }
+    #adminRequests th,#adminRequests td{ padding:10px; border-bottom:1px solid #f1ece5; vertical-align:middle; overflow-wrap:anywhere; text-align:right; }
+    .group{border:1px dashed #e0d6c8;border-radius:8px;padding:10px;margin-top:10px;background:#fff}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section id="adminRequests">
+      <h1>طلبات السائقين</h1>
+      <div class="small-muted" style="margin-bottom:8px">
+        تظهر هنا جميع طلبات تسجيل السائقين (الحالة: قيد المراجعة/مقبول/مرفوض).
+      </div>
+      <div id="adminReqList"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" onclick="renderAdminRequests()">تحديث</button>
+        <button class="btn" onclick="doLogout()">تسجيل خروج</button>
+      </div>
+    </section>
+
+    <section id="adminRequestView" style="display:none">
+      <h1>تفاصيل الطلب</h1>
+      <div id="adminReqDetails"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" onclick="backToAdminList()">رجوع لقائمة الطلبات</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+  function loadUsers(){ return JSON.parse(localStorage.getItem('rs_users') || '[]'); }
+  function saveUsers(users){ localStorage.setItem('rs_users', JSON.stringify(users)); }
+  function getCurrentUserId(){ return localStorage.getItem('rs_current_user_id') || ''; }
+  function setCurrentUserId(id){ localStorage.setItem('rs_current_user_id', id || ''); }
+  function loadDriverRequests(){ return JSON.parse(localStorage.getItem('rs_driver_requests') || '[]'); }
+  function saveDriverRequests(reqs){ localStorage.setItem('rs_driver_requests', JSON.stringify(reqs)); }
+
+  //تحقق صلاحية الادمن
+  (function guard(){
+    const users = loadUsers(); const u = users.find(x=>x.id===getCurrentUserId());
+    if(!u || u.role!=='admin'){ location.href='loginAdmin.html'; } // <-- تعديل مهم
+  })();
+
+  let adminCurrentRequestId = null;
+
+  function renderAdminRequests(){
+    showSec('adminRequests');
+    const container = document.getElementById('adminReqList');
+    const reqs = loadDriverRequests();
+    if(!reqs.length){
+      container.innerHTML = '<div class="status warn" style="text-align:center;">لا يوجد طلبات حاليًا</div>';
+      return;
+    }
+    let html = `<table class="admin-table"><thead>
+      <tr><th>رقم الطلب</th><th>الاسم</th><th>البريد</th><th>الحالة</th><th>إجراءات</th></tr>
+    </thead><tbody>`;
+    reqs.sort((a,b)=>b.requestId-a.requestId).forEach(r=>{
+      html += `<tr>
+        <td>${r.requestId}</td>
+        <td>${escapeHtml(r.name)}</td>
+        <td>${escapeHtml(r.email)}</td>
+        <td>${r.status==='pending'?'قيد المراجعة':r.status==='approved'?'مقبول':'مرفوض'}</td>
+        <td><button class="btn" onclick="openAdminRequest(${r.requestId})">عرض</button></td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  }
+
+  function openAdminRequest(requestId){
+    const reqs = loadDriverRequests();
+    const r = reqs.find(x=>x.requestId===requestId);
+    if(!r){ alert('الطلب غير موجود'); return; }
+    adminCurrentRequestId = requestId;
+    const d = r.docs || {};
+    const meta = m => m ?  `${escapeHtml(m.name)} — ${((m.size||0)/1024).toFixed(1)}KB (${m.type || "?"})` : '<span style="color:#8d7d6d">غير مرفق</span>';
+
+    const authRow = (!d.isOwner)
+      ? ('<div><strong>التفويض:</strong> ' + meta(d.authorization) + '</div>')
+      : ''; 
+
+    const html = `
+      <div class="group">
+        <div><strong>رقم الطلب:</strong> ${r.requestId}</div>
+        <div><strong>الحالة:</strong> ${r.status==='pending'?'قيد المراجعة':r.status==='approved'?'مقبول':'مرفوض'}</div>
+        <div><strong>الاسم:</strong> ${escapeHtml(r.name)}</div>
+        <div><strong>البريد:</strong> ${escapeHtml(r.email)}</div>
+        <div><strong>الهوية الجامعية:</strong> ${escapeHtml(r.uniId)}</div>
+        <hr style="border:none;border-top:1px solid #eee;margin:10px 0">
+        <div><strong>الهوية:</strong> ${meta(d.idCard)}</div>
+        <div><strong>الرخصة:</strong> ${meta(d.license)}</div>
+        <div><strong>الاستمارة:</strong> ${meta(d.vehicleReg)}</div>
+        <div><strong>التأمين:</strong> ${meta(d.insurance)}</div>
+        <div><strong>الملكية:</strong> ${d.isOwner ? 'ملك السائق' : 'ليست ملك السائق'}</div>
+        ${authRow}
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" style="background:#4CAF50" onclick="adminDecision('approved')">قبول الطلب</button>
+        <button class="btn" style="background:#E53935" onclick="adminDecision('rejected')">رفض الطلب</button>
+      </div>
+    `;
+    document.getElementById('adminReqDetails').innerHTML = html;
+    showSec('adminRequestView');
+  }
+
+  function adminDecision(decision){
+    const users = loadUsers();
+    const reqs = loadDriverRequests();
+    const idx  = reqs.findIndex(r=>r.requestId===adminCurrentRequestId);
+    if(idx === -1){ alert('الطلب غير موجود'); return; }
+    reqs[idx].status = (decision==='approved') ? 'approved' : 'rejected';
+    saveDriverRequests(reqs);
+    if(decision === 'approved'){
+      const uidx  = users.findIndex(u=>u.id===reqs[idx].userId);
+  if(uidx !== -1){ users[uidx].verified = true; saveUsers(users); }
+    }
+    openAdminRequest(adminCurrentRequestId);
+    const el   = document.getElementById('adminReqDetails');
+    const note = (decision==='approved') ? '✅ تم قبول الطلب وتفعيل المستخدم كسائق.' : '❌ تم رفض الطلب.';
+    el.insertAdjacentHTML('beforeend', `<div class="status ${(decision==='approved')?'success':'error'}" style="margin-top:10px">${note}</div>`);
+  }
+
+  function backToAdminList(){ adminCurrentRequestId=null; renderAdminRequests(); }
+  function doLogout(){ setCurrentUserId(''); location.href='loginAdmin.html'; } // اختياري: رجوع لصفحة أدمن
+  function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
+  function showSec(id){
+    document.querySelectorAll('section').forEach(s=>s.style.display='none');
+    const sec=document.getElementById(id); if(sec) sec.style.display='block';
+  }
+
+  //إظهار القائمه تلقائيا عند الفتح
+  renderAdminRequests();
+</script>
+</body>
+</html>
