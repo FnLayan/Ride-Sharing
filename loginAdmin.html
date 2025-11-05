@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>تسجيل دخول كمسؤول</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{--bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;--accent:#cbb796;--accent-hover:#b29a75;--text:#3b2f24;--muted:#7a6a57;}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);font-family:'Tajawal',sans-serif;color:var(--text)}
+    .container{width:420px;max-width:95%;padding:22px;border-radius:12px;background:var(--card);border:1px solid var(--border);box-shadow:0 8px 26px rgba(0,0,0,.08);text-align:right}
+    h1{margin:0 0 14px;font-size:20px;color:var(--muted);text-align:center}
+    label{display:block;font-size:14px;margin:8px 0 4px;color:var(--muted)}
+    input[type="email"],input[type="password"]{width:100%;padding:10px;border:1px solid #e6dcca;border-radius:6px;background:#fff;font-size:14px}
+    .btn{display:inline-block;background:var(--accent);color:#fff;padding:10px 16px;border-radius:8px;border:none;cursor:pointer;margin-top:10px;transition:.2s;text-decoration:none;font-weight:600}
+    .btn:hover{background:var(--accent-hover)}
+    .row{display:flex;gap:8px;margin-top:10px}.row .btn{flex:1}
+    .status{margin-top:8px;padding:8px;border-radius:6px;font-size:13px}
+    .error{background:rgba(206,86,86,.08);color:#7a1f1f;border:1px solid rgba(206,86,86,.12)}
+  </style>
+</head>
+<body>
+  <div class="container" role="main">
+    <h1>تسجيل دخول كمسؤول</h1>
+
+    <label>البريد</label>
+    <input id="loginEmail" type="email" placeholder="example@xxxx.com">
+
+    <label>كلمة المرور الإدارية</label>
+    <input id="loginPass" type="password" placeholder="••••••••">
+
+    <div class="row" style="margin-top:12px">
+      <button class="btn" onclick="doLogin()">تسجيل دخول</button>
+      <button class="btn" onclick="location.href='index.html'">رجوع</button>
+    </div>
+
+    <div id="loginMsg" style="margin-top:12px"></div>
+  </div>
+
+  <script>
+    function loadUsers(){ return JSON.parse(localStorage.getItem('rs_users') || '[]'); }
+    function saveUsers(users){ localStorage.setItem('rs_users', JSON.stringify(users)); }
+    function setCurrentUserId(id){ localStorage.setItem('rs_current_user_id', id || ''); }
+
+    const ADMIN_PASSWORD = '113355';
+    const ADMIN_EMAILS = [
+      'layanfn1122@gmail.com',
+      'nourah@gmail.com',
+      'sara@gmail.com'
+    ];
+
+    (function ensureDefaultAdmins(){
+      const users = loadUsers();
+      ADMIN_EMAILS.forEach(em=>{
+        const exists = users.find(u => u.email === em && u.role === 'admin');
+        if(!exists){
+          users.push({
+            id:'admin-'+em+'-'+Date.now(),
+            name: (em.split('@')[0] || 'Admin'),
+            email: em,
+            pass: ADMIN_PASSWORD,
+            role:'admin',
+            uniId:'',
+            verified:true,
+            createdAt:new Date().toISOString()
+          });
+        }
+      });
+      saveUsers(users);
+    })();
+
+    function doLogin(){
+      localStorage.setItem('rs_current_role','admin');
+      const email = (document.getElementById('loginEmail').value || '').trim();
+      const pass  = document.getElementById('loginPass').value;
+      const msg   = document.getElementById('loginMsg'); msg.innerHTML='';
+
+      if(!email){ msg.innerHTML='<div class="status error">يرجى إدخال البريد.</div>'; return; }
+      if(!ADMIN_EMAILS.includes(email)){
+        msg.innerHTML='<div class="status error">هذا البريد غير مخوّل للوصول كمسؤول.</div>'; return;
+      }
+      if(pass !== ADMIN_PASSWORD){
+        msg.innerHTML='<div class="status error">كلمة المرور الإدارية غير صحيحة.</div>'; return;
+      }
+
+      const users = loadUsers();
+      let adminUser = users.find(u => u.email === email && u.role === 'admin');
+      if(!adminUser){
+        adminUser = { id: 'admin-' + Date.now(), name: 'مسؤول', email, pass: ADMIN_PASSWORD, role:'admin', verified:true };
+        users.push(adminUser); saveUsers(users);
+      }
+      setCurrentUserId(adminUser.id);
+      location.href='admin-requests.html';
+    }
+  </script>
+</body>
+</html>
