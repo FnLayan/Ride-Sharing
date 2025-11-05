@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>تسجيل جديد</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{--bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;--accent:#cbb796;--accent-hover:#b29a75;--text:#3b2f24;--muted:#7a6a57;}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);font-family:'Tajawal',sans-serif;color:var(--text)}
+    .container{width:420px;max-width:95%;padding:22px;border-radius:12px;background:var(--card);border:1px solid var(--border);box-shadow:0 8px 26px rgba(0,0,0,.08);text-align:right}
+    h1{margin:0 0 14px;font-size:20px;color:var(--muted);text-align:center}
+    label{display:block;font-size:14px;margin:8px 0 4px;color:var(--muted)}
+    input[type="text"],input[type="email"],input[type="password"],input[type="file"]{width:100%;padding:10px;border:1px solid #e6dcca;border-radius:6px;background:#fff;font-size:14px}
+    .btn{display:inline-block;background:var(--accent);color:#fff;padding:10px 16px;border-radius:8px;border:none;cursor:pointer;margin-top:10px;transition:.2s;text-decoration:none;font-weight:600}
+    .btn:hover{background:var(--accent-hover)}
+    .row{display:flex;gap:8px;margin-top:10px}.row .btn{flex:1}
+    .status{margin-top:8px;padding:8px;border-radius:6px;font-size:13px}
+    .success{background:rgba(108,169,99,.12);color:#256029;border:1px solid rgba(108,169,99,.2)}
+    .warn{background:rgba(221,164,74,.08);color:#7a580f;border:1px solid rgba(221,164,74,.15)}
+    .error{background:rgba(206,86,86,.08);color:#7a1f1f;border:1px solid rgba(206,86,86,.12)}
+    .group{border:1px dashed #e0d6c8;border-radius:8px;padding:10px;margin-top:10px;background:#fff}
+    .group legend{font-size:13px;color:#7a6a57;padding:0 6px}
+  </style>
+</head>
+<body>
+  <div class="container" role="main">
+    <h1 id="registerTitle">تسجيل جديد</h1>
+
+    <label>الاسم الكامل</label>
+    <input id="regName" type="text" placeholder="الاسم كامل">
+    <label>البريد الجامعي</label>
+    <input id="regEmail" type="email" placeholder="44XXXXXXX@sm.imamu.edu.sa">
+
+    <label>كلمة المرور</label>
+    <input id="regPass" type="password" placeholder="أنشئ كلمة المرور">
+
+    <label>تأكيد كلمة المرور</label>
+    <input id="regPass2" type="password" placeholder="أعد إدخال كلمة المرور">
+
+    <label>رقم الهوية الجامعية (University ID)</label>
+    <input id="regUniId" type="text" placeholder="مثال: 44XXXXXXX">
+
+    <fieldset id="driverDocsBlock" class="group" style="display:none">
+      <legend>مرفقات السائق</legend>
+
+      <label>الهوية</label>
+      <input id="drvIdCard" type="file" accept=".jpg,.jpeg,.png,.pdf">
+
+      <label>رخصة القيادة</label>
+      <input id="drvLicense" type="file" accept=".jpg,.jpeg,.png,.pdf">
+
+      <label>الاستمارة</label>
+      <input id="drvRegistration" type="file" accept=".jpg,.jpeg,.png,.pdf">
+
+      <div class="muted-inline">هل السيارة ملك لك؟</div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <label style="display:flex;gap:6px;align-items:center;">
+          <input type="radio" name="owner" id="ownerSaidYes" value="yes" checked> نعم
+        </label>
+        <label style="display:flex;gap:6px;align-items:center;">
+          <input type="radio" name="owner" id="ownerNo" value="no"> لا
+        </label>
+      </div>
+
+      <div id="authWrapper" style="display:none;margin-top:8px">
+        <label>التفويض (يظهر إذا كانت السيارة ليست ملكك)</label>
+        <input id="drvAuth" type="file" accept=".jpg,.jpeg,.png,.pdf">
+      </div>
+
+      <label>التأمين</label>
+      <input id="drvInsurance" type="file" accept=".jpg,.jpeg,.png,.pdf">
+    </fieldset>
+
+    <div class="row">
+      <button class="btn" onclick="doRegister()">تسجيل وإرسال للتحقق</button>
+      <button class="btn" onclick="goBackToLogin()">العودة للدخول</button>
+    </div>
+
+    <div id="registerMsg"></div>
+    <div class="small-muted">سيتم التحقق من الرقم الجامعي تلقائيًا أثناء التسجيل.</div>
+  </div>
+
+  <script>
+    //كلاس التوثيق 
+    class Verification {
+      static storageKey = 'rs_university_ids';
+      static defaultList = [// قاعدة بيانات الطلاب
+        '440000004','440000005','440000006','445003914','445000502',
+        '444005530','445001795','','445005603','455000354'
+      ];
+
+      static get list(){
+        try{
+          const raw = localStorage.getItem(this.storageKey);
+          const arr = raw ? JSON.parse(raw) : null;
+          if (Array.isArray(arr) && arr.length) return arr.map(x=>String(x));
+        }catch(e){}
+        return this.defaultList.slice();
+      }
+
+      static set list(arr){
+        if(Array.isArray(arr)) localStorage.setItem(this.storageKey, JSON.stringify(arr.map(x=>String(x))));
+      }
+
+      static isValid(uniId){
+        return this.list.includes(String(uniId).trim());
+      }
+    }
+
+    /*التخزين*/
+    function loadUsers(){ return JSON.parse(localStorage.getItem('rs_users') || '[]'); }
+    function saveUsers(users){ localStorage.setItem('rs_users', JSON.stringify(users)); }
+    function loadDriverRequests(){ return JSON.parse(localStorage.getItem('rs_driver_requests') || '[]'); }
+    function saveDriverRequests(reqs){ localStorage.setItem('rs_driver_requests', JSON.stringify(reqs)); }
+    function nextRequestSeq(){ const k='rs_req_seq'; let n=parseInt(localStorage.getItem(k)||'0',10); n+=1; localStorage.setItem(k,String(n)); return n; }
+    function getRole(){ return localStorage.getItem('rs_current_role') || 'passenger'; }
+
+    function fileMeta(inputId){
+      const f = document.getElementById(inputId)?.files?.[0];
+      return f ? {name:f.name, size:f.size, type:f.type, lastModified:f.lastModified} : null;
+    }
+
+    function bindOwnershipToggle(){
+      const y=document.getElementById('ownerSaidYes'), n=document.getElementById('ownerNo'), aw=document.getElementById('authWrapper');
+      if(!y||!n||!aw) return; const toggle=()=>{ aw.style.display = n.checked ? 'block' : 'none'; };
+      y.addEventListener('change',toggle); n.addEventListener('change',toggle); toggle();
+    }
+    document.addEventListener('DOMContentLoaded', bindOwnershipToggle);
+
+    (function initUI(){
+      const role = getRole();
+      document.getElementById('registerTitle').textContent =
+        (role==='driver')?'تسجيل سائق جديد':(role==='admin')?'التسجيل غير متاح للمسؤول':'تسجيل راكب جديد';
+      if(role==='admin'){ document.getElementById('driverDocsBlock').style.display='none'; }
+      else if(role==='driver'){ document.getElementById('driverDocsBlock').style.display='block'; }
+    })();
+
+    function doRegister(){
+      const currentRole = getRole();
+      const name  = document.getElementById('regName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const pass  = document.getElementById('regPass').value;
+      const pass2 = document.getElementById('regPass2').value;
+      const uniId = document.getElementById('regUniId').value.trim();
+      const msg = document.getElementById('registerMsg'); msg.innerHTML='';
+
+      if(!name || !email || !pass || !pass2 || !uniId){ msg.innerHTML='<div class="status error">يرجى ملء جميع الحقول.</div>'; return; }
+      if(pass !== pass2){ msg.innerHTML='<div class="status error">كلمتا المرور غير متطابقتين.</div>'; return; }
+      if(email === 'layanfn1122@gmail.com'){ msg.innerHTML='<div class="status error">هذا البريد محجوز للحساب المسؤول.</div>'; return; }
+
+      if(!Verification.isValid(uniId)){
+        msg.innerHTML='<div class="status error">تعذّر إكمال التسجيل: الرقم الجامعي غير موجود في القاعدة.</div>'; 
+        return;
+      }
+
+      const users = loadUsers();
+      if(users.some(u=>u.email===email)){ msg.innerHTML='<div class="status warn">هذا البريد مسجّل مسبقًا. جرّبي تسجيل الدخول.</div>'; return; }
+      if(users.some(u=>u.uniId===uniId && u.uniId!=='')){ msg.innerHTML='<div class="status warn">هذا الرقم الجامعي مسجّل مسبقًا.</div>'; return; }
+
+      let driverDocs = null;
+      let role = (currentRole === 'driver') ? 'driver' : 'passenger';
+      let verified = (role === 'passenger');
+
+      if(role==='driver'){
+        const idCard = fileMeta('drvIdCard');
+        const lic    = fileMeta('drvLicense');
+        const reg    = fileMeta('drvRegistration');
+        const ins    = fileMeta('drvInsurance');
+        const isOwner= document.getElementById('ownerSaidYes')?.checked ? true : false;
+        const auth   = isOwner ? null : fileMeta('drvAuth');
+
+        if(!idCard || !lic || !reg || !ins){ msg.innerHTML='<div class="status error">الرجاء إرفاق الهوية والرخصة والاستمارة والتأمين.</div>'; return; }
+        if(!isOwner && !auth){ msg.innerHTML='<div class="status error">السيارة ليست ملكك — يجب إرفاق التفويض.</div>'; return; }
+        driverDocs = { idCard, license:lic, vehicleReg:reg, insurance:ins, isOwner, authorization:auth };
+      }
+
+      const newUser = { id:'u'+Date.now(), name, email, pass, role, uniId, verified, driverDocs, createdAt:new Date().toISOString() };
+      users.push(newUser); saveUsers(users);
+
+      if(role==='driver'){
+        const reqs = loadDriverRequests();
+        reqs.push({ requestId: nextRequestSeq(), userId:newUser.id, name:newUser.name, email:newUser.email, uniId:newUser.uniId, createdAt:new Date().toISOString(), status:'pending', docs: driverDocs });
+        saveDriverRequests(reqs);
+        msg.innerHTML = '<div class="status success">تم استلام طلبك كسائق بعد مطابقة الرقم الجامعي. بانتظار موافقة المسؤول.</div>';
+      }else{
+        msg.innerHTML = '<div class="status success">تم إنشاء حسابك ومطابقة رقمك الجامعي بنجاح. يمكنك تسجيل الدخول الآن.</div>';
+      }
+
+      ['regName','regEmail','regPass','regPass2','regUniId'].forEach(id=>document.getElementById(id).value='');
+      ['drvIdCard','drvLicense','drvRegistration','drvInsurance','drvAuth'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+      const aw=document.getElementById('authWrapper'); if(aw) aw.style.display='none';
+    }
+   
+    function goBackToLogin(){
+       const r = localStorage.getItem('rs_current_role') || 'passenger';
+      if (r === 'driver')      location.href = 'loginDriver.html';
+      else if (r === 'admin')  location.href = 'loginAdmin.html';
+      else                     location.href = 'loginPassenger.html';
+    }
+  </script>
+</body>
+</html>
