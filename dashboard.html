@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>لوحة المستخدم</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{--bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;--accent:#cbb796;--accent-hover:#b29a75;--text:#3b2f24;--muted:#7a6a57;}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);font-family:'Tajawal',sans-serif;color:var(--text)}
+    .container{width:420px;max-width:95%;padding:22px;border-radius:12px;background:var(--card);border:1px solid var(--border);box-shadow:0 8px 26px rgba(0,0,0,.08);text-align:right}
+    h1{margin:0 0 14px;font-size:20px;color:var(--muted);text-align:center}
+    .btn{display:inline-block;background:var(--accent);color:#fff;padding:10px 16px;border-radius:8px;border:none;cursor:pointer;margin-top:10px;transition:.2s;text-decoration:none;font-weight:600}
+    .btn:hover{background:var(--accent-hover)}
+    .row{display:flex;gap:8px;margin-top:10px}.row .btn{flex:1}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="dashTitle">لوحة المستخدم</h1>
+    <div id="userInfo"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" onclick="doLogout()">تسجيل خروج</button>
+    </div>
+    <div class="small-muted" style="margin-top:12px">البيانات محفوظة محليًا على هذا الجهاز.</div>
+  </div>
+
+  <script>
+    function loadUsers(){ return JSON.parse(localStorage.getItem('rs_users') || '[]'); }
+    function getCurrentUserId(){ return localStorage.getItem('rs_current_user_id') || ''; }
+    function setCurrentUserId(id){ localStorage.setItem('rs_current_user_id', id || ''); }
+
+    (function render(){
+      const id = getCurrentUserId(); const users = loadUsers(); const currentUser = users.find(u=>u.id===id);
+      if(!currentUser){ location.href='login.html'; return; }
+      const roleText = (currentUser.role==='driver')? 'سائق' : (currentUser.role==='admin')? 'مسؤول' : 'راكب';
+      const verifiedText = currentUser.verified? '<span style="color:green">موثَّق</span>' : '<span style="color:orange">غير موثَّق</span>';
+      document.getElementById('userInfo').innerHTML = `
+        <div><strong>الاسم:</strong> ${escapeHtml(currentUser.name)}</div>
+        <div><strong>الدور:</strong> ${roleText}</div>
+        <div><strong>البريد:</strong> ${escapeHtml(currentUser.email)}</div>
+        <div><strong>رقم الهوية:</strong> ${escapeHtml(currentUser.uniId)}</div>
+        <div style="margin-top:8px"><strong>حالة التوثيق:</strong> ${verifiedText}</div>
+      `;
+    })();
+
+    function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
+    function doLogout(){ setCurrentUserId(''); location.href='login.html'; }
+  </script>
+</body>
+</html>
