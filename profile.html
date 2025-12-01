@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>الملف الشخصي</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
+    :root{
+      --bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;
+      --accent:#cbb796;--accent-hover:#b29a75;
+      --text:#3b2f24;--muted:#7a6a57;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+      background:var(--bg);font-family:'Tajawal',sans-serif;color:var(--text)
+    }
+    .container{
+      width:560px;max-width:95%;padding:22px;border-radius:12px;
+      background:var(--card);border:1px solid var(--border);
+      box-shadow:0 8px 26px rgba(0,0,0,.08)
+    }
+    h1{margin:0 0 14px;text-align:center;color:var(--muted);font-size:20px}
+    h3{margin:0 0 8px;font-size:16px;color:var(--muted)}
+    label{display:block;margin:8px 0 4px;color:var(--muted);font-size:14px}
+    input{
+      width:100%;padding:10px;border:1px solid #e6dcca;border-radius:8px;background:#fff
+    }
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{
+      background:var(--accent);color:#fff;border:none;border-radius:8px;
+      padding:10px 14px;cursor:pointer;font-weight:600
+    }
+    .btn:hover{background:var(--accent-hover)}
+    .muted{color:var(--muted);font-size:13px}
+    .status{margin-top:8px;padding:8px;border-radius:6px;font-size:13px}
+    .success{background:rgba(108,169,99,.12);color:#256029;border:1px solid rgba(108,169,99,.2)}
+    .warn{background:rgba(221,164,74,.08);color:#7a580f;border:1px solid rgba(221,164,74,.15)}
+    .error{background:rgba(206,86,86,.08);color:#7a1f1f;border:1px solid rgba(206,86,86,.12)}
+    .kv{
+      display:grid;grid-template-columns:140px 1fr;
+      gap:6px 10px;margin-bottom:6px
+    }
+    .card{
+      background:#fff;border:1px solid var(--border);
+      border-radius:10px;padding:12px;margin-top:10px
+    }
+    .badge{display:inline-block;padding:3px 8px;border-radius:999px;font-size:12px;margin-inline-start:6px}
+    .badge-ok{background:#e7f6ea;color:#256029;border:1px solid #cdecd2}
+    .badge-warn{background:#fff4df;color:#7a580f;border:1px solid #ffe7b3}
+    .badge-err{background:#fde8e8;color:#7a1f1f;border:1px solid #f6caca}
+    .list{margin:0;padding-inline-start:18px}
+    .list li{margin:2px 0}
+    .dim{color:#8d7d6d;font-size:12px}
+    .stars{color:#f4b400;font-size:17px;letter-spacing:2px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="title">الملف الشخصي</h1>
+
+    <!-- بيانات عامه مشتركة -->
+    <div class="card" id="commonCard">
+      <div class="kv">
+        <div class="muted">الاسم:</div><div id="vName">-</div>
+        <div class="muted">البريد:</div><div id="vEmail">-</div>
+        <div class="muted">الرقم الجامعي:</div><div id="vUniId">-</div>
+        <div class="muted">الدور:</div><div id="vRole">-</div>
+        <div class="muted">التقييم:</div><div id="vRating">-</div>
+      </div>
+    </div>
+
+    <!-- قسم للسايق بس -->
+    <div class="card" id="driverCard" style="display:none">
+      <h3>معلومات السائق</h3>
+      <div class="kv">
+        <div class="muted">حالة الطلب:</div>
+        <div id="vReqStatus"><span class="badge badge-warn">قيد المراجعة</span></div>
+      </div>
+      <div id="vDocsWrap">
+        <div class="muted" style="margin:8px 0 4px">المرفقات:</div>
+        <ul class="list" id="vDocsList"></ul>
+      </div>
+      <div id="vNoReq" class="status error" style="display:none">لا يوجد طلب سائق مرتبط بحسابك.</div>
+    </div>
+
+    <!-- تعديل الاسم/الرقم السري -->
+    <div class="card">
+      <h3>تعديل بيانات الحساب</h3>
+      <label>الاسم</label>
+      <input id="inName" type="text" placeholder="اسمك">
+      <div class="row" style="margin-top:8px">
+        <div style="flex:1">
+          <label>كلمة مرور جديدة</label>
+          <input id="inPass1" type="password" placeholder="اتركه فارغًا إن لم ترد التغيير">
+        </div>
+        <div style="flex:1">
+          <label>تأكيد كلمة المرور</label>
+          <input id="inPass2" type="password" placeholder="أعد الإدخال">
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" onclick="save()">حفظ</button>
+        <button class="btn" onclick="goHome()">رجوع للصفحة الرئيسية</button>
+      </div>
+      <div id="msg"></div>
+      <div class="muted" style="margin-top:8px">لا يمكن تغيير البريد من هنا.</div>
+    </div>
+
+    <div id="noSession" class="status warn" style="display:none;text-align:center">
+      لا يوجد مستخدم مسجّل حاليًا.
+    </div>
+  </div>
+
+<script src="notifications-bar.js"></script>
+<script>
+  function loadUsers(){ return JSON.parse(localStorage.getItem('rs_users')||'[]'); }
+  function saveUsers(arr){ localStorage.setItem('rs_users', JSON.stringify(arr)); }
+  function getCurId(){ return localStorage.getItem('rs_current_user_id')||''; }
+  function loadDriverRequests(){ return JSON.parse(localStorage.getItem('rs_driver_requests')||'[]'); }
+  function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+  let me=null;
+
+  function renderStars(val){
+    const out = document.getElementById('vRating');
+    if(!val || isNaN(val) || val <= 0){
+      out.innerHTML = '<span class="dim">لا يوجد تقييم بعد</span>';
+      return;
+    }
+    let v = Math.max(0, Math.min(5, val));
+    let full = Math.round(v);
+    let s = '';
+    for(let i=0;i<5;i++){
+      s += (i < full) ? '★' : '☆';
+    }
+    out.innerHTML = `<span class="stars">${s}</span> <span class="dim">(${v.toFixed(1)})</span>`;
+  }
+
+  (function init(){
+    const users = loadUsers();
+    me = users.find(u=>u.id===getCurId()) || null;
+
+    if(!me){
+      document.getElementById('noSession').style.display='block';
+      return;
+    }
+
+    // عنوان حسب الدور
+    document.getElementById('title').textContent =
+      (me.role==='driver') ? 'الملف الشخصي (سائق)'
+      : (me.role==='admin') ? 'الملف الشخصي (مسؤول)'
+      : 'الملف الشخصي (راكب)';
+
+    document.getElementById('vName').textContent  = escapeHtml(me.name||'-');
+    document.getElementById('vEmail').textContent = escapeHtml(me.email||'-');
+    document.getElementById('vUniId').textContent = escapeHtml(me.uniId||'-');
+    document.getElementById('vRole').textContent  =
+      (me.role==='driver')?'سائق':(me.role==='admin'?'مسؤول':'راكب');
+
+    const ratingVal = (typeof me.rating === 'number')
+      ? me.rating
+      : (typeof me.avgRating === 'number' ? me.avgRating : 0);
+    renderStars(ratingVal);
+
+    document.getElementById('inName').value = me.name||'';
+
+    // إن كان سائقًا نظهر قسم السائق
+    if(me.role==='driver'){
+      document.getElementById('driverCard').style.display='block';
+      fillDriverSection(me);
+    }
+  })();
+
+  function fillDriverSection(user){
+    const listEl = document.getElementById('vDocsList');
+    listEl.innerHTML = '';
+    const docs = (user.driverDocs)||{};
+    const meta = m => m
+      ? ` ${escapeHtml(m.name)} <span class="dim">(${(m.size/1024).toFixed(1)}KB)</span>`
+      : '<span class="dim">غير مرفق</span>';
+
+    const reqs = loadDriverRequests();
+    const myReq = reqs.find(r=>r.userId===user.id) || null;
+    const stEl = document.getElementById('vReqStatus');
+    const noReqEl = document.getElementById('vNoReq');
+
+    if(!myReq){
+      noReqEl.style.display='block';
+      stEl.innerHTML = '<span class="badge badge-err">غير موجود</span>';
+    }else{
+      noReqEl.style.display='none';
+      let badge = '<span class="badge badge-warn">قيد المراجعة</span>';
+      if(myReq.status==='approved') badge = '<span class="badge badge-ok">مقبول</span>';
+      if(myReq.status==='rejected') badge = '<span class="badge badge-err">مرفوض</span>';
+      stEl.innerHTML = badge;
+    }
+
+    const items = [
+      ['الهوية', docs.idCard],
+      ['الرخصة', docs.license],
+      ['الاستمارة', docs.vehicleReg],
+      ['التأمين', docs.insurance],
+      ['التفويض', docs.isOwner ? null : docs.authorization]
+    ];
+    items.forEach(([label, m])=>{
+      const li=document.createElement('li');
+      li.innerHTML = `<strong>${label}:</strong> ${meta(m)}`;
+      listEl.appendChild(li);
+    });
+  }
+
+  function save(){
+    const msg=document.getElementById('msg'); msg.innerHTML='';
+    if(!me){ msg.innerHTML='<div class="status error">لا جلسة مستخدم.</div>'; return; }
+
+    const name=document.getElementById('inName').value.trim();
+    const p1=document.getElementById('inPass1').value;
+    const p2=document.getElementById('inPass2').value;
+
+    if(!name){
+      msg.innerHTML='<div class="status error">الاسم مطلوب.</div>'; 
+      return;
+    }
+    if(p1 || p2){
+      if(p1!==p2){
+        msg.innerHTML='<div class="status error">كلمتا المرور غير متطابقتين.</div>'; 
+        return;
+      }
+      if(p1.length<4){
+        msg.innerHTML='<div class="status error">كلمة المرور قصيرة.</div>'; 
+        return;
+      }
+    }
+
+    const users=loadUsers(); 
+    const idx=users.findIndex(u=>u.id===me.id);
+    if(idx===-1){
+      msg.innerHTML='<div class="status error">المستخدم غير موجود.</div>'; 
+      return;
+    }
+    users[idx].name = name;
+    if(p1) users[idx].pass = p1;
+    saveUsers(users);
+
+    me.name = name; if(p1) me.pass=p1;
+    document.getElementById('vName').textContent = escapeHtml(name);
+    document.getElementById('inPass1').value='';
+    document.getElementById('inPass2').value='';
+    msg.innerHTML='<div class="status success">تم الحفظ بنجاح.</div>';
+  }
+
+  function goHome(){
+    const role = localStorage.getItem('rs_current_role') || '';
+
+    if (role === 'driver') {
+      location.href = 'driverHome.html';
+    } else if (role === 'passenger') {
+      location.href = 'passengerHome.html';
+    } else if (role === 'admin') {
+      location.href = 'adminHome.html';
+    } else {
+      location.href = 'index.html'; 
+    }
+}
+
+</script>
+</body>
+</html>
