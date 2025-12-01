@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>المحادثات الجماعية</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{
+      --bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;
+      --accent:#cbb796;--accent-hover:#b29a75;
+      --text:#3b2f24;--muted:#7a6a57;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      font-family:'Tajawal',sans-serif;
+      color:var(--text);
+    }
+    .wrap{
+      max-width:900px;
+      margin:20px auto;
+      padding:16px;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:16px;
+      box-shadow:0 8px 26px rgba(0,0,0,.08);
+    }
+    h1{
+      text-align:center;
+      font-size:21px;
+      margin-bottom:10px;
+      color:var(--muted)
+    }
+    .section{
+      margin-top:14px;
+      border-top:1px solid #efe6db;
+      padding-top:10px;
+    }
+    .section:first-of-type{
+      border-top:none;
+      padding-top:0;
+    }
+    .label{
+      font-weight:700;
+      font-size:14px;
+      color:var(--muted);
+      margin-bottom:4px;
+      display:block;
+    }
+    .small{
+      font-size:12px;
+      color:#a1907f;
+      margin-top:2px;
+    }
+    .btn{
+      background:var(--accent);
+      color:#fff;
+      border:none;
+      padding:8px 10px;
+      border-radius:8px;
+      font-weight:700;
+      cursor:pointer;
+      font-size:13px;
+    }
+    .btn:hover{background:var(--accent-hover)}
+    .btn-sm{
+      padding:5px 8px;
+      font-size:12px;
+    }
+    .btn-ghost{
+      background:#fff;
+      color:var(--muted);
+      border:1px solid var(--border);
+    }
+    .btn-ghost:hover{
+      background:#f3ebe0;
+    }
+    input{
+      padding:8px;
+      width:100%;
+      border:1px solid var(--border);
+      border-radius:8px;
+      margin-top:4px;
+      background:#fff;
+      font-family:'Tajawal',sans-serif;
+    }
+    .row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:flex-end;
+    }
+    .col{
+      flex:1;
+      min-width:200px;
+    }
+    .group{
+      border:1px solid #efe6db;
+      border-radius:10px;
+      padding:9px 10px;
+      background:#fff;
+      margin-bottom:6px;
+      cursor:pointer;
+      font-size:14px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    .group-title{
+      font-weight:700;
+    }
+    .group-owner{
+      font-size:11px;
+      color:#a1907f;
+    }
+    .pill{
+      font-size:11px;
+      border-radius:999px;
+      padding:2px 8px;
+      border:1px solid #decfbf;
+      background:#fffaf3;
+      color:#7a6a57;
+    }
+    .muted{
+      color:var(--muted);
+      font-size:13px;
+    }
+    .muted-sm{
+      color:var(--muted);
+      font-size:12px;
+    }
+    .chat-box{
+      height:320px;
+      border:1px solid #efe6db;
+      background:#fff;
+      border-radius:10px;
+      padding:10px;
+      overflow-y:auto;
+      margin-top:10px;
+    }
+    .msg-wrap{
+      margin:6px 0;
+      max-width:85%;
+    }
+    .msg-wrap.me{
+      margin-left:auto;
+      text-align:left;
+    }
+    .meta{
+      font-size:11px;
+      color:#816c5a;
+      margin-bottom:2px;
+      display:flex;
+      justify-content:flex-start;
+      gap:6px;
+      align-items:center;
+    }
+    .msg{
+      background:#eee;
+      padding:6px 10px;
+      border-radius:10px;
+      font-size:14px;
+      display:inline-block;
+    }
+    .msg.me{
+      background:#d8c4a9;
+    }
+    .role-badge{
+      font-size:11px;
+      border-radius:999px;
+      padding:2px 6px;
+      border:1px solid #decfbf;
+      background:#fffaf3;
+    }
+    .time{
+      font-size:10px;
+      color:#b3a392;
+    }
+    .inv-card{
+      border:1px dashed #e0cdb6;
+      border-radius:10px;
+      padding:8px 10px;
+      background:#fff;
+      margin-bottom:6px;
+      font-size:13px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .inv-main{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .tag{
+      font-size:11px;
+      color:#9a8b7a;
+    }
+    .danger{
+      color:#b5534a;
+    }
+    .center{
+      text-align:center;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>المحادثات الجماعية</h1>
+      <button onclick="goHome()" 
+        style="margin:8px; padding:6px 10px; background:#b29a75; color:#fff; border:none; border-radius:6px; cursor:pointer;">
+         رجوع للصفحة الرئيسية
+      </button>
+
+      <div id="noUser" class="section" style="display:none">
+        <p class="muted center">
+          لا يمكن استخدام المحادثات الجماعية بدون تسجيل الدخول.<br>
+          ادخلي أولاً كـ سائق أو راكب من صفحة الدخول.
+        </p>
+      </div>
+
+      <div id="mainContent" style="display:none">
+        <!-- إنشاء قروب -->
+        <div class="section">
+          <span class="label">إنشاء قروب جديد:</span>
+          <div class="row">
+            <div class="col">
+              <input id="groupName" placeholder="مثال: قروب طالبات المسار الصحي"/>
+              <div class="small">
+                أي مستخدم (راكب أو سائق) يقدر ينشئ قروب عام لجامعته أو مجموعته.
+              </div>
+            </div>
+            <button class="btn" type="button" onclick="createGroup()">إنشاء القروب</button>
+          </div>
+        </div>
+
+        <!-- دعواتك الموجوده -->
+        <div class="section">
+          <span class="label">دعوات القروبات في انتظار موافقتك:</span>
+          <div id="inviteList"></div>
+        </div>
+
+        <!-- قائمة القروبات -->
+        <div class="section">
+          <span class="label">القروبات التي أنت عضو فيها:</span>
+          <div id="groupList"></div>
+        </div>
+
+        <!-- دعوة عضو عبر الإيميل -->
+        <div class="section" id="inviteSection" style="display:none">
+          <span class="label">إضافة عضو جديد إلى القروب الحالي عبر الإيميل:</span>
+          <div class="row">
+            <div class="col">
+              <input id="inviteEmail" placeholder="البريد الإلكتروني الجامعي"/>
+              <div class="small">
+                النظام يتحقق أن البريد مسجّل في التطبيق. لن يدخل القروب إلا بعد موافقته على الدعوة.
+              </div>
+              <!-- رسالة الخطأ هنا -->
+            <div id="inviteError" class="small danger" style="display:none;margin-top:4px;"></div>
+            </div>
+            <button class="btn" type="button" onclick="inviteUser()">إرسال الدعوة</button>
+          </div>
+        </div>
+
+        <!-- المحادثة -->
+        <div id="chatSection" class="section" style="display:none">
+          <span class="label" id="chatTitle"></span>
+          <div class="small" id="chatHint"></div>
+          <div id="chatBox" class="chat-box"></div>
+          <div class="row" style="margin-top:8px">
+            <div class="col">
+              <input id="chatInput" placeholder="اكتبي رسالتك هنا..."/>
+            </div>
+            <button class="btn" type="button" onclick="sendMsg()">إرسال</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script src="notifications-bar.js"></script>
+<script>
+  function load(key){ try{return JSON.parse(localStorage.getItem(key)||'[]');}catch(e){return[];} }
+  function save(key,val){ localStorage.setItem(key, JSON.stringify(val)); }
+  function uid(){ return 'id'+Date.now()+Math.floor(Math.random()*1000); }
+
+  function fmtTimeShort(iso){
+    if(!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  }
+
+  function alertMsg(m){ alert(m); }
+
+  const currentUserId = localStorage.getItem('rs_current_user_id') || '';
+  const currentRole   = localStorage.getItem('rs_current_role') || ''; 
+  let users    = load('rs_users');
+  let groups   = load('rs_groups');         
+  let members  = load('rs_group_members'); 
+  let messages = load('rs_group_msgs');     
+
+  let currentGroupId = null;
+
+  function getUser(id){ return users.find(u=>u.id===id) || null; }
+
+  function ensureUser(){
+    if(!currentUserId){
+      document.getElementById('noUser').style.display = 'block';
+      document.getElementById('mainContent').style.display = 'none';
+      return false;
+    }
+    document.getElementById('noUser').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    return true;
+  }
+
+  // ===== إنشاء قروب =====
+  function createGroup(){
+    if(!ensureUser()) return;
+
+    const nameEl = document.getElementById('groupName');
+    const name   = nameEl.value.trim();
+    if(!name){
+      alertMsg('اكتبي اسم القروب أولاً.');
+      return;
+    }
+
+    const id = uid();
+    const g = {id, name, owner: currentUserId};
+    groups.push(g);
+
+    // إضافة منشئ القروب كعضو موافق عليه مباشره
+    members.push({
+      groupId: id,
+      userId: currentUserId,
+      role: currentRole,
+      userRole: currentRole,
+      approved: true,
+      invitedBy: currentUserId,
+      createdAt: new Date().toISOString()
+    });
+
+    save('rs_groups', groups);
+    save('rs_group_members', members);
+
+    nameEl.value = '';
+    currentGroupId = id;
+    renderGroups();
+    renderInvites();
+    openChat(id);
+  }
+
+  // ===== عرض القروبات التي أنا عضو فيها =====
+  function renderGroups(){
+    if(!ensureUser()) return;
+
+    const list = document.getElementById('groupList');
+    const myMemberships = members.filter(
+      m => m.userId === currentUserId && m.approved
+    );
+
+    if(!myMemberships.length){
+      list.innerHTML = '<div class="muted-sm">لا توجد قروبات انضممتِ لها بعد.</div>';
+      document.getElementById('inviteSection').style.display = 'none';
+      document.getElementById('chatSection').style.display = 'none';
+      return;
+    }
+
+    let html = '';
+    myMemberships.forEach(m=>{
+      const g = groups.find(x=>x.id===m.groupId);
+      if(!g) return;
+      const owner = getUser(g.owner);
+      const ownerName = owner ? owner.name : 'مستخدم';
+      const amOwner = (g.owner === currentUserId);
+
+      html += `
+        <div class="group" onclick="openChat('${g.id}')">
+          <div>
+            <div class="group-title">${g.name}</div>
+            <div class="group-owner">المنشئ: ${ownerName}</div>
+          </div>
+          <div class="pill">
+            ${amOwner ? 'أنت منشئ القروب' : 'عضو في القروب'}
+          </div>
+        </div>
+      `;
+    });
+
+    list.innerHTML = html;
+  }
+
+  // ===== الدعوات المعلقة للمستخدم الحالي =====
+  function renderInvites(){
+    if(!ensureUser()) return;
+    const box = document.getElementById('inviteList');
+
+    const pending = members.filter(
+      m => m.userId === currentUserId && !m.approved
+    );
+
+    if(!pending.length){
+      box.innerHTML = '<div class="muted-sm">لا توجد دعوات قروبات في انتظار موافقتك.</div>';
+      return;
+    }
+
+    let html = '';
+    pending.forEach(m=>{
+      const g = groups.find(x=>x.id===m.groupId);
+      if(!g) return;
+      const inviter = getUser(m.invitedBy);
+      const invName = inviter ? inviter.name : 'مستخدم';
+      html += `
+        <div class="inv-card">
+          <div class="inv-main">
+            <div><strong>${g.name}</strong></div>
+            <div class="tag">دعوة من: ${invName}</div>
+            <div class="tag">دورك في هذا القروب: ${
+              (m.role === 'driver' || m.userRole === 'driver')
+                ? '🚗 سائق'
+                : '🧍‍♀️ راكب'
+            }</div>
+          </div>
+          <div>
+            <button class="btn btn-sm" type="button" onclick="acceptInvite('${g.id}')">قبول</button>
+            <button class="btn btn-sm btn-ghost" type="button" onclick="rejectInvite('${g.id}')">رفض</button>
+          </div>
+        </div>
+      `;
+    });
+
+    box.innerHTML = html;
+  }
+
+  function acceptInvite(groupId){
+    const idx = members.findIndex(
+      m => m.groupId === groupId && m.userId === currentUserId && !m.approved
+    );
+    if(idx === -1) return;
+    members[idx].approved = true;
+    members[idx].approvedAt = new Date().toISOString();
+    save('rs_group_members', members);
+
+    // رسالة انضمامية بسيطه داخل القروب:
+    messages.push({
+      id: uid(),
+      groupId,
+      from: '_system',
+      text: (getUser(currentUserId)?.name || 'عضو جديد') + ' انضم إلى القروب.',
+      createdAt: new Date().toISOString()
+    });
+    save('rs_group_msgs', messages);
+
+    renderInvites();
+    renderGroups();
+  }
+
+  function rejectInvite(groupId){
+    const newMembers = members.filter(
+      m => !(m.groupId === groupId && m.userId === currentUserId && !m.approved)
+    );
+    members = newMembers;
+    save('rs_group_members', members);
+    renderInvites();
+    renderGroups();
+  }
+
+  // ===== دعوة عضو جديد عبر الإيميل =====
+  function inviteUser(){
+    if(!ensureUser()) return;
+  if(!currentGroupId){
+    alertMsg('اختاري قروبًا أولاً من القائمة.');
+    return;
+  }
+
+  const myMembership = members.find(
+    m => m.groupId === currentGroupId && m.userId === currentUserId && m.approved
+  );
+  if(!myMembership){
+      alertMsg('لا يمكنك دعوة أعضاء لهذا القروب قبل أن تكوني عضوًا فيه.');
+      return;
+    }
+
+    const emailInput = document.getElementById('inviteEmail');
+    const errorBox   = document.getElementById('inviteError');
+
+    // نفضي رسالة الخطأ في كل محاولة جديدة
+    if(errorBox){
+      errorBox.style.display = 'none';
+      errorBox.textContent   = '';
+    }
+
+    const email = emailInput.value.trim();
+    if(!email){
+      if(errorBox){
+       errorBox.textContent = 'أدخلي البريد الإلكتروني للعضو.';
+        errorBox.style.display = 'block';
+      }else{
+        alertMsg('أدخلي البريد الإلكتروني للعضو.');
+      }
+      emailInput.focus();
+      return;
+    }
+
+    const user = users.find(u => u.email === email);
+    if(!user){
+      if(errorBox){
+        errorBox.textContent = 'هذا البريد غير مسجّل في النظام. تأكّدي من كتابته بشكل صحيح.';
+        errorBox.style.display = 'block';
+      }else{
+        alertMsg('هذا البريد غير مسجّل في التطبيق.');
+      }
+      return;
+    }
+
+    const existing = members.find(
+      m => m.groupId === currentGroupId && m.userId === user.id
+    );
+    if(existing){
+      if(errorBox){
+        errorBox.textContent = existing.approved
+          ? 'هذا المستخدم عضو بالفعل في هذا القروب.'
+          : 'هناك دعوة معلّقة بالفعل لهذا المستخدم لهذا القروب.';
+        errorBox.style.display = 'block';
+      }else{
+        alertMsg(existing.approved
+          ? 'هذا المستخدم عضو بالفعل في هذا القروب.'
+          : 'هناك دعوة معلّقة بالفعل لهذا المستخدم لهذا القروب.'
+        );
+      }
+      return;
+    }
+
+    // كل شيء تمام عادي نرسل الدعوة
+    members.push({
+      groupId: currentGroupId,
+      userId: user.id,
+      role: user.role,
+      userRole: user.role,
+      approved: false,
+      invitedBy: currentUserId,
+      createdAt: new Date().toISOString()
+    });
+    save('rs_group_members', members);
+
+  emailInput.value = '';
+  if(errorBox){
+    errorBox.style.display = 'none';
+    errorBox.textContent = '';
+  }
+
+  alertMsg('تم إرسال الدعوة، وستظهر عند المستخدم في شاشة المحادثات الجماعية.');
+}
+
+  // ===== فتح قروب والمحادثة =====
+  function openChat(groupId){
+    if(!ensureUser()) return;
+
+    // تأكّد أنه عضو موافق عليه
+    const myMembership = members.find(
+      m => m.groupId === groupId && m.userId === currentUserId && m.approved
+    );
+    if(!myMembership){
+      alertMsg('لا يمكنك الدخول إلى هذا القروب قبل الموافقة على الدعوة.');
+      return;
+    }
+
+    currentGroupId = groupId;
+
+    document.getElementById('inviteSection').style.display = 'block';
+    document.getElementById('chatSection').style.display   = 'block';
+
+    const g = groups.find(x=>x.id===groupId);
+    const chatTitle = document.getElementById('chatTitle');
+    const chatHint  = document.getElementById('chatHint');
+
+    const owner = getUser(g.owner);
+    const ownerName = owner ? owner.name : 'مستخدم';
+
+    chatTitle.textContent = 'المجموعة: ' + g.name;
+    chatHint.textContent =
+      'المنشئ: ' + ownerName +
+      ' · أي عضو في القروب يقدر يرسل رسائل ويتابع المحادثة.';
+
+    loadChatMessages();
+  }
+
+  function loadChatMessages(){
+    if(!currentGroupId) return;
+    const box = document.getElementById('chatBox');
+    box.innerHTML = '';
+
+    const groupMsgs = messages
+      .filter(m => m.groupId === currentGroupId)
+      .sort((a,b)=> new Date(a.createdAt) - new Date(b.createdAt));
+
+    if(!groupMsgs.length){
+      box.innerHTML = '<div class="muted-sm center">لا توجد رسائل بعد. ابدئي المحادثة الآن.</div>';
+      return;
+    }
+
+    groupMsgs.forEach(m=>{
+      if(m.from === '_system'){
+        const div = document.createElement('div');
+        div.className = 'muted-sm center';
+        div.textContent = m.text + ' (' + fmtTimeShort(m.createdAt) + ')';
+        box.appendChild(div);
+        return;
+      }
+
+      const u = getUser(m.from);
+      const name = u ? u.name : 'مستخدم';
+      const role = u ? (u.role === 'driver' ? ' سائق' : (u.role === 'admin' ? 'مسؤول' : 'راكب')) : 'عضو';
+      const mine = (m.from === currentUserId);
+
+      const wrap = document.createElement('div');
+      wrap.className = 'msg-wrap' + (mine ? ' me' : '');
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.innerHTML = `
+        <span>${name}</span>
+        <span class="role-badge">${role}</span>
+        <span class="time">${fmtTimeShort(m.createdAt)}</span>
+      `;
+
+      const msg = document.createElement('div');
+      msg.className = 'msg' + (mine ? ' me' : '');
+      msg.textContent = m.text;
+
+      wrap.appendChild(meta);
+      wrap.appendChild(msg);
+      box.appendChild(wrap);
+    });
+
+    box.scrollTop = box.scrollHeight;
+  }
+
+  // ===== إرسال رسالة =====
+  function sendMsg(){
+    if(!ensureUser()) return;
+    if(!currentGroupId){
+      alertMsg('اختاري قروبًا أولاً.');
+      return;
+    }
+
+    const myMembership = members.find(
+      m => m.groupId === currentGroupId && m.userId === currentUserId && m.approved
+    );
+    if(!myMembership){
+      alertMsg('لا يمكنك إرسال رسالة قبل الموافقة على الدعوة.');// حالة التطوير
+      return;
+    }
+
+    const input = document.getElementById('chatInput');
+    const text  = input.value.trim();
+    if(!text) return;
+
+    messages.push({
+      id: uid(),
+      groupId: currentGroupId,
+      from: currentUserId,
+      text,
+      createdAt: new Date().toISOString()
+    });
+    save('rs_group_msgs', messages);
+
+    input.value = '';
+    loadChatMessages();
+  }
+
+  window.addEventListener('load', ()=>{
+    if(!ensureUser()) return;
+    renderInvites();
+    renderGroups();
+  });
+
+  function goHome(){
+    const role = localStorage.getItem('rs_current_role') || '';
+
+    if (role === 'driver') {
+      location.href = 'driverHome.html';
+    } else if (role === 'passenger') {
+      location.href = 'passengerHome.html';
+    } else {
+      location.href = 'index.html'; 
+    }
+  }
+</script>
+</body>
+</html>
