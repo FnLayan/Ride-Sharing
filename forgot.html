@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>استعادة كلمة المرور</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{--bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;--accent:#cbb796;--accent-hover:#b29a75;--text:#3b2f24;--muted:#7a6a57;}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);font-family:'Tajawal',sans-serif;color:var(--text)}
+    .container{width:420px;max-width:95%;padding:22px;border-radius:12px;background:var(--card);border:1px solid var(--border);box-shadow:0 8px 26px rgba(0,0,0,.08);text-align:right}
+    h1{margin:0 0 14px;font-size:20px;color:var(--muted);text-align:center}
+    label{display:block;font-size:14px;margin:8px 0 4px;color:var(--muted)}
+    input[type="email"],input[type="text"],input[type="password"]{width:100%;padding:10px;border:1px solid #e6dcca;border-radius:6px;background:#fff;font-size:14px}
+    .btn{display:inline-block;background:var(--accent);color:#fff;padding:10px 16px;border-radius:8px;border:none;cursor:pointer;margin-top:10px;transition:.2s;text-decoration:none;font-weight:600}
+    .btn:hover{background:var(--accent-hover)}
+    .row{display:flex;gap:8px;margin-top:10px}.row .btn{flex:1}
+    .status{margin-top:8px;padding:8px;border-radius:6px;font-size:13px}
+    .success{background:rgba(108,169,99,.12);color:#256029;border:1px solid rgba(108,169,99,.2)}
+    .error{background:rgba(206,86,86,.08);color:#7a1f1f;border:1px solid rgba(206,86,86,.12)}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>استعادة كلمة المرور</h1>
+
+    <!-- الخطوة 1: إدخال البريد -->
+    <div id="forgotStep1">
+      <label>أدخل بريدك لإرسال رمز تحقق</label>
+      <input id="forgotEmail" type="email" placeholder="your@address">
+      <div class="row">
+        <button class="btn" onclick="sendResetCode()">إرسال الرمز</button>
+        <button class="btn" onclick="goBackToLogin()">العودة</button>
+      </div>
+    </div>
+
+    <!-- الخطوة 2: إدخال الرمز وكلمة المرور الجديدة -->
+    <div id="forgotStep2" style="display:none">
+      <label>ادخل رمز التحقق (6 أرقام)</label>
+      <input id="resetCodeInput" type="text" placeholder="مثال: 123456">
+      <label>كلمة مرور جديدة</label>
+      <input id="newPass" type="password" placeholder="كلمة المرور الجديدة">
+      <label>تأكيد كلمة المرور الجديدة</label>
+      <input id="newPass2" type="password" placeholder="تأكيد كلمة المرور الجديدة">
+      <div class="row">
+        <button class="btn" onclick="applyNewPassword()">تغيير كلمة المرور</button>
+        <button class="btn" onclick="cancelReset()">إلغاء</button>
+      </div>
+    </div>
+
+    <div id="forgotMsg"></div>
+  </div>
+
+  <!-- EmailJS مكتبة-->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>
+    // مفاتيح حسابنا في EmailJS
+    emailjs.init({ publicKey: 'B4JZd_o7oXjBgNa-_' });
+
+    const SERVICE_ID        = 'service_yswru0l';
+    const RESET_TEMPLATE_ID = 'template_4bfgoyt'; 
+
+    // دوال المستخدمين
+    function loadUsers(){ return JSON.parse(localStorage.getItem('rs_users') || '[]'); }
+    function saveUsers(users){ localStorage.setItem('rs_users', JSON.stringify(users)); }
+
+    // متغيرات الاستعادة
+    let resetTargetEmail = null;
+    let resetCode        = null;
+
+    // إرسال رمز التحقق بالإيميل
+    function sendResetCode(){
+      const email = document.getElementById('forgotEmail').value.trim();
+      const msg   = document.getElementById('forgotMsg');
+      const s1    = document.getElementById('forgotStep1');
+      const s2    = document.getElementById('forgotStep2');
+      msg.innerHTML = '';
+
+      if(!email){
+        msg.innerHTML = '<div class="status error">أدخل البريد أولاً.</div>';
+        return;
+      }
+
+      const users = loadUsers();
+      const found = users.find(u => u.email === email);
+      if(!found){
+        msg.innerHTML = '<div class="status error">لا يوجد حساب بهذا البريد.</div>';
+        return;
+      }
+
+      // نولد رمز عشوائي مكوّن من 6 أرقام
+      resetCode        = Math.floor(100000 + Math.random()*900000).toString();
+      resetTargetEmail = email;
+
+      const params = {
+        to_email:   email,
+        to_name:    found.name || 'مستخدمنا العزيز',
+        reset_code: resetCode
+      };
+
+      // نرسل الإيميل عبر EmailJS
+      emailjs.send(SERVICE_ID, RESET_TEMPLATE_ID, params)
+        .then(function(response){
+          console.log('Reset email sent', response.status, response.text);
+          msg.innerHTML = '<div class="status success">تم إرسال رمز التحقق إلى بريدك. الرجاء إدخاله مع كلمة المرور الجديدة.</div>';
+          s1.style.display = 'none';
+          s2.style.display = 'block';
+        })
+        .catch(function(err){
+          console.error('Email error', err);
+          msg.innerHTML = '<div class="status error">حدث خطأ أثناء إرسال الإيميل. حاولي مرة أخرى لاحقاً.</div>';
+        });
+    }
+
+    // تطبيق كلمة المرور الجديدة بعد التحقق من الرمز
+    function applyNewPassword(){
+      const code = document.getElementById('resetCodeInput').value.trim();
+      const p1   = document.getElementById('newPass').value;
+      const p2   = document.getElementById('newPass2').value;
+      const msg  = document.getElementById('forgotMsg');
+      msg.innerHTML = '';
+
+      if(!code || !p1 || !p2){
+        msg.innerHTML = '<div class="status error">أكمل جميع الحقول.</div>';
+        return;
+      }
+      if(code !== resetCode){
+        msg.innerHTML = '<div class="status error">رمز التحقق غير صحيح.</div>';
+        return;
+      }
+      if(p1 !== p2){
+        msg.innerHTML = '<div class="status error">كلمتا المرور غير متطابقتين.</div>';
+        return;
+      }
+
+      const users = loadUsers();
+      const idx   = users.findIndex(u => u.email === resetTargetEmail);
+      if(idx === -1){
+        msg.innerHTML = '<div class="status error">حدث خطأ، الرجاء إعادة المحاولة.</div>';
+        return;
+      }
+
+      // حفظ كلمة المرور الجديدة
+      users[idx].pass = p1;
+      saveUsers(users);
+
+      msg.innerHTML = '<div class="status success">تم تغيير كلمة المرور بنجاح، سيتم تحويلك لصفحة الدخول الآن.</div>';
+
+      const role = users[idx].role || 'passenger';
+      let loginPage = 'loginPassenger.html';
+      if(role === 'driver') loginPage = 'loginDriver.html';
+      if(role === 'admin')  loginPage = 'loginAdmin.html';
+
+      setTimeout(()=>{ location.href = loginPage; }, 1500);
+    }
+
+    function cancelReset(){
+      resetCode        = null;
+      resetTargetEmail = null;
+      document.getElementById('forgotStep1').style.display = 'block';
+      document.getElementById('forgotStep2').style.display = 'none';
+      goBackToLogin();
+    }
+
+    function goBackToLogin(){
+      const r = localStorage.getItem('rs_current_role') || 'passenger';
+      if (r === 'driver')      location.href = 'loginDriver.html';
+      else if (r === 'admin')  location.href = 'loginAdmin.html';
+      else                     location.href = 'loginPassenger.html';
+    }
+  </script>
+</body>
+</html>
