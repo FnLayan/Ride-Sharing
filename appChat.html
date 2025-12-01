@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>محادثة الرحلة</title>
+  <style>
+    body{ font-family:'Tajawal',sans-serif; margin:0; padding:0; background:#f8f3ee; color:#3b2f24; }
+    .chat-shell{ max-width:600px; margin:0 auto; height:100vh; display:flex; flex-direction:column; }
+    .chat-header{ padding:14px; background:#cbb796; color:#fff; font-weight:700; text-align:center; }
+    .chat-messages{ flex:1; overflow-y:auto; padding:12px; background:#fff; }
+    .chat-input{ display:flex; padding:10px; background:#fff; border-top:1px solid #ddd0c8; }
+    .chat-input input{ flex:1; padding:10px; border:1px solid #ddd0c8; border-radius:6px; margin-right:8px; }
+    .chat-input button{ padding:10px 16px; background:#cbb796; color:#fff; border:none; border-radius:6px; cursor:pointer; }
+    .message{ margin-bottom:10px; }
+    .message .meta{ font-size:12px; color:#7a6a57; margin-bottom:2px; }
+    .message .text{ font-size:14px; padding:8px; border-radius:8px; background:#f0f0f0; display:inline-block; max-width:80%; }
+    .message.driver .text{ background:#d0f0d0; }
+  </style>
+</head>
+<body>
+  <div class="chat-shell">
+    <div class="chat-header">محادثة الرحلة الحالية</div>
+    <div id="messages" class="chat-messages"></div>
+    <div class="chat-input">
+      <input id="inputMsg" type="text" placeholder="اكتب رسالتك…" />
+      <button id="sendBtn">إرسال</button>
+    </div>
+  </div>
+
+  <script src="notifications-bar.js"></script>
+  <script>
+    function loadUsers(){ try{ return JSON.parse(localStorage.getItem('rs_users')||'[]'); }catch(e){ return []; } }
+    function loadBookings(){ try{ return JSON.parse(localStorage.getItem('rs_bookings')||'[]'); }catch(e){ return []; } }
+    function loadRides(){ try{ return JSON.parse(localStorage.getItem('rs_rides')||'[]'); }catch(e){ return []; } }
+
+    function loadMessages(rideId){
+      try{ return JSON.parse(localStorage.getItem('chat_'+rideId)||'[]'); }
+      catch(e){ return []; }
+    }
+    function saveMessages(rideId, msgs){
+      localStorage.setItem('chat_'+rideId, JSON.stringify(msgs));
+    }
+
+    const currentUserId = localStorage.getItem('rs_current_user_id') || '';
+    const currentRole   = localStorage.getItem('rs_current_role') || '';
+    const rideId        = localStorage.getItem('rs_current_ride_id') || '';
+
+    if(!currentUserId || !rideId){
+      alert('لا توجد رحلة حالية أو لم يتم تسجيل الدخول.');//حالة التطوير
+      location.href = 'passengerHome.html'; 
+    }
+
+    const users = loadUsers();
+    const me = users.find(u => u.id === currentUserId) || {name:'مستخدم', role:currentRole};
+
+    const messagesDiv = document.getElementById('messages');
+    const inputMsg     = document.getElementById('inputMsg');
+    const sendBtn      = document.getElementById('sendBtn');
+
+    // عرض الرسايل القديمه
+    let msgs = loadMessages(rideId);
+    function renderMessages(){
+      messagesDiv.innerHTML = '';
+      msgs.forEach(m=>{
+        const div = document.createElement('div');
+        div.className = 'message ' + (m.role==='driver' ? 'driver' : 'passenger');
+        div.innerHTML = `
+          <div class="meta">${m.name} · ${m.role === 'driver' ? 'سائق' : 'راكب'} · ${new Date(m.time).toLocaleTimeString()}</div>
+          <div class="text">${m.text}</div>
+        `;
+        messagesDiv.appendChild(div);
+      });
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+    renderMessages();
+
+    // إرسال رسالة
+    sendBtn.addEventListener('click', ()=>{
+      const txt = inputMsg.value.trim();
+      if(!txt) return;
+      const msgObj = {
+        name: me.name,
+        role: me.role,
+        time: new Date().toISOString(),
+        text: txt
+      };
+      msgs.push(msgObj);
+      saveMessages(rideId, msgs);
+      inputMsg.value = '';
+      renderMessages();
+    });
+
+    inputMsg.addEventListener('keypress', e=>{
+      if(e.key === 'Enter'){ sendBtn.click(); e.preventDefault();}
+    });
+  </script>
+</body>
+</html>
