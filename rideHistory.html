@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>سجل الرحلات</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{
+      --bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;
+      --accent:#cbb796;--accent-hover:#b29a75;
+      --text:#3b2f24;--muted:#7a6a57;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;background:var(--bg);
+      font-family:'Tajawal',sans-serif;color:var(--text);
+    }
+    .wrap{max-width:950px;margin:24px auto;padding:16px}
+    .card{
+      background:var(--card);border:1px solid var(--border);
+      border-radius:12px;box-shadow:0 8px 26px rgba(0,0,0,.08);
+      padding:16px;
+    }
+    h1{margin:0 0 10px;font-size:22px;color:var(--muted);text-align:center}
+    .muted{color:var(--muted);font-size:13px}
+    .ride{
+      border:1px solid #efe6db;border-radius:10px;
+      padding:12px;margin-bottom:10px;background:#fff;
+    }
+    .ride h3{margin:0 0 4px;font-size:16px}
+    .badge{
+      display:inline-block;background:#eee;border:1px solid #e1d6c7;
+      border-radius:999px;padding:3px 8px;font-size:12px;
+      margin-inline-start:6px;
+    }
+    .status-open{background:#fff;border-color:#decfbf;}
+    .status-in{background:#d0f0d0;border-color:#8fbf8f;}
+    .status-done{background:#e0e0e0;border-color:#b0b0b0;}
+    .btn{
+      background:var(--accent);color:#fff;border:none;
+      border-radius:8px;padding:7px 12px;cursor:pointer;
+      font-weight:700;font-size:13px;
+    }
+    .btn:hover{background:var(--accent-hover)}
+    .empty{
+      padding:14px;border-radius:10px;border:1px dashed #decfbf;
+      background:#fff;text-align:center;color:var(--muted);
+      margin-top:10px;
+    }
+    .top-row{
+      display:flex;justify-content:space-between;
+      align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;
+    }
+    .chip{
+      font-size:12px;padding:4px 10px;border-radius:999px;
+      border:1px solid #decfbf;background:#fff;
+    }
+    .back-btn{
+      background:#fff;
+      color:var(--accent);
+      border:none;
+      border-radius:999px;
+      padding:6px 12px;
+      font-size:12px;
+      cursor:pointer;
+      font-weight:700;
+      box-shadow:0 0 0 1px rgba(255,255,255,.6);
+        }
+    .back-btn:hover{
+      background:#f3ebe0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="top-row">
+        <h1>سجل الرحلات</h1>
+        <div class="chip" id="roleChip"></div>
+        <button type="button" class="back-btn" onclick="goHome()">
+          الرجوع للصفحة الرئيسية
+        </button>
+      </div>
+      <p class="muted" id="introText"></p>
+      <div id="list"></div>
+    </div>
+  </div>
+
+  <script src="notifications-bar.js"></script>
+  <script>
+    function goReport(rideId){localStorage.setItem('rs_report_ride_id', rideId);location.href = 'reports.html';} // عدّلي الاسم لو صفحة البلاغات عندك اسمها مختلف
+
+    function loadRides(){ try{return JSON.parse(localStorage.getItem('rs_rides')||'[]');}catch(e){return[];} }
+    function loadUsers(){ try{return JSON.parse(localStorage.getItem('rs_users')||'[]');}catch(e){return[];} }
+    function loadBookings(){ try{return JSON.parse(localStorage.getItem('rs_bookings')||'[]');}catch(e){return[];} }
+    function loadRatings(){ try{return JSON.parse(localStorage.getItem('rs_ratings')||'[]');}catch(e){return[];} }
+
+    function fmtTime(iso){ return new Date(iso).toLocaleString(); }
+    function escapeHtml(s){
+      return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    }
+
+    function statusInfo(st){
+      if(st === 'in_progress')      return {text:'جارية الآن', cls:'status-in'};
+      if(st === 'pending_payment')  return {text:'بانتظار الدفع لانطلاق الرحلة', cls:'status-open'};
+      if(st === 'completed')        return {text:'مكتملة',   cls:'status-done'};
+      return {text:'لم تبدأ بعد', cls:'status-open'};
+    }
+
+    // ضبط الرحلة الحالية وفتح currentRide لو بغينا
+    function openAsCurrent(role, rideId){
+      localStorage.setItem('rs_current_ride_id', rideId);
+      localStorage.setItem('rs_current_ride_role', role);
+      location.href = 'currentRide.html';
+    }
+
+    // راكب يقيّم السائق
+    function goRate(rideId){
+      localStorage.setItem('rs_rate_ride_id', rideId);
+      localStorage.setItem('rs_rate_from_role', 'passenger');
+      localStorage.setItem('rs_rate_target_user_id', ''); // مو مستخدمين هنا
+      location.href = 'rateRide.html';
+    }
+
+    // سائق يقيّم راكب معيّن
+    function goRateFromDriver(rideId, passengerId){
+      localStorage.setItem('rs_rate_ride_id', rideId);
+      localStorage.setItem('rs_rate_from_role', 'driver');
+      localStorage.setItem('rs_rate_target_user_id', passengerId);
+      location.href = 'rateRide.html';
+    }
+
+    function init(){
+      const userId = localStorage.getItem('rs_current_user_id') || '';
+      const role   = localStorage.getItem('rs_current_role') || '';
+
+      const roleChip = document.getElementById('roleChip');
+      const intro    = document.getElementById('introText');
+      const listBox  = document.getElementById('list');
+
+      if(!userId){
+        roleChip.textContent = 'لا يوجد مستخدم مسجّل دخول حالياً';
+        intro.textContent = 'سجّلي الدخول كسائق أو كراكب لعرض سجل الرحلات.';
+        listBox.innerHTML = '<div class="empty">لا يمكن عرض السجل بدون تسجيل دخول.</div>';
+        return;
+      }
+
+      if(role === 'driver'){
+        roleChip.textContent = 'وضع السائق';
+        intro.textContent = 'تظهر هنا جميع الرحلات التي أنشأتها كسائق (الحالية والمكتملة). يمكنك فتح أي رحلة كرحلة حالية، وكذلك تقييم الركاب بعد اكتمال الرحلة.';
+        renderForDriver(userId);
+      }else{ 
+        roleChip.textContent = 'وضع الراكب';
+        intro.textContent = 'تظهر هنا جميع الرحلات التي انضممتِ لها كراكب. يمكنك فتح أي رحلة كرحلة حالية أو تقييم السائق بعد اكتمال الرحلة.';
+        renderForPassenger(userId);
+      }
+    }
+
+    function renderForDriver(userId){
+      const rides    = loadRides().filter(r => r.driverId === userId);
+      const bookings = loadBookings();
+      const users    = loadUsers();
+      const ratings  = loadRatings();
+      const listBox  = document.getElementById('list');
+
+      if(!rides.length){
+        listBox.innerHTML = '<div class="empty">لا توجد رحلات مرتبطة بك كسائق حتى الآن.</div>';
+        return;
+      }
+
+      // الأحدث أول
+      rides.sort((a,b)=> new Date(b.createdAt || b.departAt) - new Date(a.createdAt || a.departAt));
+
+      let html = '';
+      rides.forEach(r=>{
+        const st = statusInfo(r.status);
+        const rideBookings = bookings.filter(
+          b => b.rideId === r.id && (b.status === 'joined' || b.status === 'paid')
+        );
+        const passCount = rideBookings.length;
+
+        const canOpen = r.status !== 'completed';
+
+        // قائمة الركاب مع زر تقييم لكل واحد للسايق
+        let passengersHtml = '';
+        if(rideBookings.length){
+          passengersHtml += '<div class="muted" style="margin-top:4px">الركاب في هذه الرحلة:</div>';
+          passengersHtml += '<ul class="muted" style="padding-right:18px;margin:2px 0 0;">';
+          rideBookings.forEach(b=>{
+            const u = users.find(x=>x.id===b.passengerId);
+            const name = escapeHtml(u ? u.name : ('راكب '+b.passengerId));
+
+            const hasRated = ratings.some(rt =>
+              rt.rideId === r.id &&
+              rt.fromUserId === userId &&
+              rt.toUserId === b.passengerId
+            );
+            const canRatePassenger = (r.status === 'completed') && !hasRated;
+
+            passengersHtml += '<li>'+name;
+            if(canRatePassenger){
+              passengersHtml +=
+                ' - <button class="btn" '+
+                'style="padding:3px 8px;font-size:11px;margin-right:4px;" '+
+                'onclick="goRateFromDriver(\''+r.id+'\',\''+b.passengerId+'\')">تقييم الراكب</button>';
+            }
+            passengersHtml += '</li>';
+          });
+          passengersHtml += '</ul>';
+        }
+
+        html += `
+          <div class="ride">
+            <h3>
+              ${escapeHtml(r.from?.name || '؟')} → ${escapeHtml(r.to?.name || '؟')}
+              <span class="badge ${st.cls}">${st.text}</span>
+            </h3>
+        <div class="muted">وقت المغادرة:     ${fmtTime(r.departAt)}</div>
+            <div class="muted">عدد الركاب المسجّلين حاليًا: ${passCount}</div>
+            <div class="muted" style="margin-top:4px">
+              ملاحظات: ${escapeHtml(r.notes || 'لا توجد ملاحظات')}
+            </div>
+            ${passengersHtml}
+            <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:8px;">
+              ${
+                canOpen
+                ? `<button class="btn" onclick="openAsCurrent('driver','${r.id}')">
+                     فتح "الرحلة الحالية"
+                   </button>`
+                : `<span class="muted">هذه الرحلة منتهية ولا يمكن تعيينها كرحلة حالية.</span>`
+              }
+              <button class="btn btn-ghost" type="button" onclick="goReport('${r.id}')">
+                إرسال بلاغ عن هذه الرحلة
+              </button>
+            </div>
+          </div>
+        `;
+      });
+
+      listBox.innerHTML = html;
+    }
+    
+    function renderForPassenger(userId){
+      const rides    = loadRides();
+      const bookings = loadBookings().filter(
+        b => b.passengerId === userId
+      );
+      const ratings  = loadRatings();
+      const listBox  = document.getElementById('list');
+
+      if(!bookings.length){
+        listBox.innerHTML = '<div class="empty">لا توجد رحلات انضممتِ لها حتى الآن.</div>';
+        return;
+      }
+
+      const combined = bookings.map(b=>{
+        const r = rides.find(x => x.id === b.rideId);
+        return r ? {booking:b, ride:r} : null;
+      }).filter(x=>x);
+
+      combined.sort((a,b)=> new Date(b.booking.createdAt) - new Date(a.booking.createdAt));
+
+      let html = '';
+      combined.forEach(item=>{
+        const r = item.ride;
+        const b = item.booking;
+        const st = statusInfo(r.status);
+        const payText = (b.status === 'paid') ? 'مدفوع' : 'غير مدفوع';
+        const canOpen = r.status !== 'completed';
+
+        const hasRated = ratings.some(rt =>
+          rt.rideId === r.id &&
+          rt.fromUserId === userId &&
+          rt.toUserId === r.driverId
+        );
+        const canRate = (r.status === 'completed') && !hasRated;
+
+        html += `
+          <div class="ride">
+            <h3>
+              ${escapeHtml(r.from?.name || '؟')} → ${escapeHtml(r.to?.name || '؟')}
+              <span class="badge ${st.cls}">${st.text}</span>
+            </h3>
+            <div class="muted">السائق: ${escapeHtml(r.driverName || 'غير معروف')}</div>
+            <div class="muted">وقت المغادرة: ${fmtTime(r.departAt)}</div>
+            <div class="muted">حالة دفعك: ${payText}</div>
+            <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:8px;">
+              ${
+                canOpen
+                ? `<button class="btn" onclick="openAsCurrent('passenger','${r.id}')">
+                     فتح "الرحلة الحالية"
+                   </button>`
+                : `<span class="muted">هذه الرحلة منتهية ولا يمكن تعيينها كرحلة حالية.</span>`
+                  }
+                  ${
+                    canRate
+                ? `<button class="btn" style="background:#d5a96d;" onclick="goRate('${r.id}')">
+                    تقييم السائق
+                   </button>`
+                : ''
+              }
+              <button class="btn btn-ghost" type="button" onclick="goReport('${r.id}')">
+                إرسال بلاغ عن هذه الرحلة
+              </button>
+            </div>
+          </div>
+        `;
+      });
+
+      listBox.innerHTML = html;
+    }
+
+    function goHome(){
+      const role = localStorage.getItem('rs_current_role') || '';
+      if(role === 'driver'){
+        location.href = 'driverHome.html';
+      }else if(role === 'passenger'){
+        location.href = 'passengerHome.html';
+      }else{
+        location.href = 'index.html'; // احتياطي
+      }
+    }
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>
