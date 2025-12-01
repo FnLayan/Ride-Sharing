@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>الصفحة الرئيسية (الراكب)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+  :root{
+    --bg:#f8f3ee; 
+    --white:#ffffff; 
+    --accent:#cbb796; 
+    --accent-hover:#b29a75;
+    --border:#ddd0c8;
+    --text:#3b2f24; 
+    --muted:#7a6a57;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; 
+    min-height:100vh; 
+    display:flex; 
+    align-items:center; 
+    justify-content:center;
+    background:var(--bg); 
+    font-family:'Tajawal',sans-serif; 
+    color:var(--text);
+  }
+
+  .shell{
+    width:min(900px,95vw);
+    background:var(--white);
+    border:1px solid var(--border);
+    border-radius:18px;
+    box-shadow:0 8px 25px rgba(0,0,0,.1);
+    padding:0;
+    overflow:visible;
+    min-height:440px;          
+    position:relative;
+  }
+
+  .header{
+    background:var(--accent);
+    color:var(--white);
+    text-align:center;
+    font-weight:700;
+    font-size:22px;
+    padding:14px;
+    border-radius:18px 18px 0 0;
+    position:relative;
+  }
+
+  .content{
+    padding:32px 26px;
+    text-align:center;
+  }
+
+  .lead{
+    color:#5b4d3f;
+    line-height:1.9;
+    font-size:16px;
+    margin-bottom:18px;
+  }
+
+  .explore-btn{
+    background:var(--accent);
+    color:#fff;
+    font-weight:700;
+    border:none;
+    border-radius:14px;
+    padding:14px 30px;
+    cursor:pointer;
+    font-size:16px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.1);
+    transition:background 0.25s ease, transform 0.25s ease;
+  }
+  .explore-btn:hover{
+    background:var(--accent-hover);
+    transform:translateY(-2px);
+  }
+
+  /* زر القائمة الجانبية */
+  .ham{
+    position:absolute; 
+    top:12px; 
+    right:14px; 
+    width:40px; 
+    height:40px; 
+    border-radius:10px;
+    background:var(--white); 
+    border:1px solid var(--border);
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    cursor:pointer;
+    box-shadow:0 3px 10px rgba(0,0,0,.06);
+  }
+  .ham span, .ham span:before, .ham span:after{
+    display:block; width:18px; height:2px; background:var(--muted); content:"";
+    position:relative; border-radius:2px;
+  }
+  .ham span:before{ position:absolute; right:0; top:-6px; }
+  .ham span:after{ position:absolute; right:0; top:6px; }
+
+  .backdrop{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,.15);
+    z-index:2;
+    display:none;
+  }
+  .backdrop.show{ display:block; }
+
+  /* القائمه نفسها */
+  .menuSheet{
+    position:absolute;
+    top:12px;
+    right:0;
+    bottom:12px;
+    width:320px;
+    background:#f5efe6;
+    border-left:1px solid var(--border);
+    border-radius:16px 0 0 16px;
+    box-shadow:-10px 0 24px rgba(0,0,0,.06);
+    display:none;
+    padding:18px;
+    z-index:3;
+    opacity:0;
+    transform:translateX(40px);
+    transition:opacity .25s ease, transform .25s ease;
+  }
+  .menuSheet.open{display:block; opacity:1; transform:translateX(0);}
+  .menuSheet h3{ margin:6px 0 14px; color:#2f281f; text-align:right; }
+  .m{
+    width:100%; padding:13px 16px; margin:12px 0;
+    border:none; border-radius:14px; cursor:pointer;
+    background:var(--accent); color:#fff; font-weight:700;
+    box-shadow:0 6px 16px rgba(0,0,0,.06);
+  }
+  .m:hover{ background:var(--accent-hover); }
+
+  .m.logout{
+    background:#d87a6b;
+  }
+  .m.logout:hover{
+    background:#c36658;
+  }
+
+  @media (max-width:640px){
+    .menuSheet{ width:86vw; }
+    .header{ font-size:20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="header">
+    الصفحة الرئيسية (الراكب)
+    <button class="ham" aria-label="القائمة" onclick="toggleMenu()"><span></span></button>
+  </div>
+
+  <div class="content">
+    <p class="lead">مرحبًا بك! من هنا تقدر تدير مشاويرك وتحجز الرحلات وتتواصل مع الآخرين.</p>
+
+    <div id="currentRideBox" style="margin-bottom:18px; display:none; text-align:right;"></div>
+
+    <!-- قسم حجز الرحلات -->
+    <p style="color:var(--muted); margin:0 0 10px;">
+      من هنا تقدر تتصفح وتحجز رحلة مناسبة لك:
+    </p>
+    <button class="explore-btn" onclick="go('exploreRides.html')">
+    تصفح الرحلات
+    </button>
+    
+
+    <!-- قسم للتواصل -->
+    <p style="color:var(--muted); margin:26px 0 10px;">
+      ومن هنا تقدر تتواصل مع السائقين والركاب عبر المجموعات:
+    </p>
+    <button class="explore-btn" onclick="go('groupChat.html')" 
+        style="display:block; margin:0 auto;">
+        الدردشات الجماعية
+    </button>
+  </div>
+
+  <!-- الخلفيه الشفافة -->
+  <div id="menuBackdrop" class="backdrop" onclick="closeMenu()"></div>
+
+  <!-- القائمه الجانبيه -->
+  <aside id="menuSheet" class="menuSheet" aria-hidden="true">
+    <button class="m" type="button" onclick="location.href='profile.html'">الملف الشخصي</button>
+    <button id="historyBtn" class="m" onclick="go('rideHistory.html')">سجل الرحلات</button>
+    <button id="reportsBtn" class="m" onclick="go('reports.html')">بلاغاتي</button>
+    <button id="contactsBtn" class="m" onclick="go('contacts.html')">جهات الاتصال</button>
+    <button id="helpBtn" class="m" onclick="go('helpCenter.html')">مركز المساعدة</button>
+    <button class="m logout" onclick="doLogout()">تسجيل خروج</button>
+  </aside>
+</div>
+
+<script src="notifications-bar.js"></script>
+<script>
+  function loadRides(){
+    try{return JSON.parse(localStorage.getItem('rs_rides')||'[]');}
+    catch(e){return[];}
+  }
+  function fmtTime(iso){ return new Date(iso).toLocaleString(); }
+  function escapeHtml(s){
+    return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  }
+
+  function toggleMenu(){
+    const s = document.getElementById('menuSheet');
+    const b = document.getElementById('menuBackdrop');
+    const isOpen = s.classList.contains('open');
+    if(isOpen){
+      s.classList.remove('open');
+      b.classList.remove('show');
+      setTimeout(()=>{ s.style.display='none'; }, 250);
+    } else {
+      s.style.display='block';
+      setTimeout(()=>{ s.classList.add('open'); }, 10);
+      b.classList.add('show');
+    }
+    s.setAttribute('aria-hidden', isOpen ? 'true' : 'false');
+  }
+
+  function closeMenu(){
+    const s = document.getElementById('menuSheet');
+    const b = document.getElementById('menuBackdrop');
+    if(!s.classList.contains('open')) return;
+    s.classList.remove('open');
+    b.classList.remove('show');
+    setTimeout(()=>{ s.style.display='none'; }, 250);
+    s.setAttribute('aria-hidden','true');
+  }
+
+  function go(url){ location.href = url; }
+
+  function doLogout(){
+    localStorage.setItem('rs_current_user_id','');
+    localStorage.setItem('rs_current_role','');
+    location.href = 'loginPassenger.html';
+  }
+
+  function loadBookings(){
+    try{return JSON.parse(localStorage.getItem('rs_bookings')||'[]');}
+    catch(e){return[];}
+  }
+
+ function initCurrentRideForPassenger(){
+    const box = document.getElementById('currentRideBox');
+    if(!box) return;
+
+    const userId = localStorage.getItem('rs_current_user_id') || '';
+    const role   = localStorage.getItem('rs_current_role') || '';
+    const rideId = localStorage.getItem('rs_current_ride_id');
+
+    // لازم يكون: مستخدم موجود + دوره راكب + عنده rideId محفوظ
+    if(!userId || role !== 'passenger' || !rideId){
+      box.style.display = 'none';
+      return;
+    }
+
+    const rides = loadRides();
+    const ride  = rides.find(r => r.id === rideId);
+    if(!ride){
+      box.style.display = 'none';
+      return;
+    }
+
+    // الحالة لازم تكون من الثلاثة فقط عشان نعتبرها نشطه
+    const st = ride.status || 'open';
+    if(['open','pending_payment','in_progress'].indexOf(st) === -1){
+      box.style.display = 'none';
+      return;
+    }
+
+    const bookings = loadBookings();
+    const myBooking = bookings.find(
+      b => b.rideId === ride.id &&
+           b.passengerId === userId &&
+           (b.status === 'joined' || b.status === 'paid')
+    );
+    if(!myBooking){
+      box.style.display = 'none';
+      return;
+    }
+
+    let statusLabel = 'لم تبدأ بعد';
+    if(st === 'pending_payment') statusLabel = 'بانتظار الدفع لانطلاق الرحلة';
+    else if(st === 'in_progress') statusLabel = 'الرحلة جارية الآن';
+
+    box.style.display = 'block';
+    box.innerHTML = `
+      <div style="border:1px solid #decfbf;border-radius:12px;padding:10px 12px;background:#fffaf3;">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:4px;">لديك رحلة نشطة كراكب:</div>
+        <div style="font-size:14px;font-weight:700;">
+          ${escapeHtml(ride.from?.name || '؟')} → ${escapeHtml(ride.to?.name || '؟')}
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+          الوقت: ${fmtTime(ride.departAt)} · الحالة: ${statusLabel}
+        </div>
+        <button style="margin-top:8px;" class="explore-btn" onclick="go('currentRide.html')">
+          متابعة الرحلة الحالية
+        </button>
+      </div>
+    `;
+  }
+
+window.addEventListener('load', initCurrentRideForPassenger);
+</script>
+
+</body>
+</html>
