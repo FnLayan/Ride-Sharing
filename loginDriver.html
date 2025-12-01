@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>تسجيل دخول كسائق</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{--bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;--accent:#cbb796;--accent-hover:#b29a75;--text:#3b2f24;--muted:#7a6a57;}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);font-family:'Tajawal',sans-serif;color:var(--text)}
+    .container{width:420px;max-width:95%;padding:22px;border-radius:12px;background:var(--card);border:1px solid var(--border);box-shadow:0 8px 26px rgba(0,0,0,.08);text-align:right}
+    h1{margin:0 0 14px;font-size:20px;color:var(--muted);text-align:center}
+    label{display:block;font-size:14px;margin:8px 0 4px;color:var(--muted)}
+    input[type="email"],input[type="password"]{width:100%;padding:10px;border:1px solid #e6dcca;border-radius:6px;background:#fff;font-size:14px}
+    .btn{display:inline-block;background:var(--accent);color:#fff;padding:10px 16px;border-radius:8px;border:none;cursor:pointer;margin-top:10px;transition:.2s;text-decoration:none;font-weight:600}
+    .btn:hover{background:var(--accent-hover)}
+    .row{display:flex;gap:8px;margin-top:10px}.row .btn{flex:1;text-align:center}
+    .status{margin-top:8px;padding:8px;border-radius:6px;font-size:13px}
+    .success{background:rgba(108,169,99,.12);color:#256029;border:1px solid rgba(108,169,99,.2)}
+    .warn{background:rgba(221,164,74,.08);color:#7a580f;border:1px solid rgba(221,164,74,.15)}
+    .error{background:rgba(206,86,86,.08);color:#7a1f1f;border:1px solid rgba(206,86,86,.12)}
+    a.link{color: var(--muted);text-decoration: underline;}
+    a.link:hover{color: var(--accent-hover);}
+    a.link:visited{color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="container" role="main">
+    <h1>تسجيل دخول كسائق</h1>
+
+    <label>البريد</label>
+    <input id="loginEmail" type="email" placeholder="44XXXXXXX@sm.imamu.edu.sa">
+
+    <label>كلمة المرور</label>
+    <input id="loginPass" type="password" placeholder="••••••••">
+
+    <div class="row" style="margin-top:12px">
+      <button class="btn" onclick="doLogin()">تسجيل دخول</button>
+      <!--لو كان السائق ما عنده جساب يروح يسجل جديد-->
+      <a class="btn" href="register.html"
+         onclick="localStorage.setItem('rs_current_role','driver')">تسجيل جديد</a>
+    </div>
+
+    <div id="loginMsg" style="margin-top:12px"></div>
+
+    <div style="margin-top:10px;display:flex;justify-content:space-between">
+      <!--زر نسيت كلمة المرور وتغيير الدور -->
+      <a class="link" href="forgot.html"
+         onclick="localStorage.setItem('rs_current_role','driver')">نسيت كلمة المرور؟</a>
+      <a class="link" href="index.html">تغيير الدور</a>
+    </div>
+  </div>
+
+  <script>
+    //
+    function loadUsers(){ return JSON.parse(localStorage.getItem('rs_users') || '[]'); }
+    function setCurrentUserId(id){ localStorage.setItem('rs_current_user_id', id || ''); }
+    function loadDriverRequests(){ return JSON.parse(localStorage.getItem('rs_driver_requests') || '[]'); }
+    function getDriverRequestByUserId(userId){
+      const reqs = loadDriverRequests(); return reqs.find(r => r.userId === userId) || null;
+    }
+
+    function doLogin(){
+      localStorage.setItem('rs_current_role','driver');
+      const email = (document.getElementById('loginEmail').value || '').trim();
+      const pass  = document.getElementById('loginPass').value;
+      const msg   = document.getElementById('loginMsg'); msg.innerHTML='';
+
+      if(!email || !pass){ msg.innerHTML='<div class="status error">أدخل البريد وكلمة المرور.</div>'; return; }
+
+      const users = loadUsers();
+      const byEmail = users.find(u=>u.email===email);
+      if(!byEmail){
+        msg.innerHTML='<div class="status error">لا يوجد حساب بهذا البريد. الرجاء التسجيل كسائق أولاً.</div>';
+        return;
+      }
+
+      const found = users.find(u=>u.email===email && u.pass===pass);
+      if(!found){ msg.innerHTML='<div class="status error">بيانات الدخول غير صحيحة.</div>'; return; }
+
+      if(found.role!=='driver'){
+        const roleName = (found.role==='passenger')?'راكب':'مسؤول';
+        msg.innerHTML = `<div class="status warn">حسابك مسجّل كـ <strong>${roleName}</strong>. اختَر نفس الدور من الشاشة الأولى.</div>`;
+        return;
+      }
+
+      const req = getDriverRequestByUserId(found.id);
+      if (!req){
+        msg.innerHTML = '<div class="status error">لا يوجد طلب سائق مرتبط بحسابك. الرجاء إعادة التسجيل كسائق.</div>';
+        return;
+      }
+      if (req.status === 'rejected'){
+       const by = req.reviewedBy ? ` بواسطة: ${req.reviewedBy}` : '';
+       msg.innerHTML = `<div class="status error">❌ تم رفض طلبك من قبل المسؤول${by}.</div>`;
+         return;
+      }
+      if (req.status === 'pending'){
+        msg.innerHTML = '<div class="status warn">طلبك كسائق ما زال قيد المراجعة. الرجاء المحاولة لاحقًا.</div>';
+        return;
+      }
+      if(!found.verified){
+        msg.innerHTML = '<div class="status warn">حسابك غير موثّق بعد. تأكد من مطابقة الرقم الجامعي أثناء التسجيل.</div>';
+        return;
+      }
+
+      // لو الطلب مقبول نعرض لازم اسم المسؤول اللي وافق عليه او ارفضه (الدكتوره نصحت فيه)
+      if (req.status === 'approved'){
+        const by = req.reviewedBy ? ` (تمت الموافقة بواسطة: ${req.reviewedBy})` : '';
+        msg.innerHTML = `<div class="status success">✅ تمت الموافقة على طلبك كسائق${by}</div>`;
+        setTimeout(()=> {
+        setCurrentUserId(found.id);
+         location.href='driverHome.html';
+        }, 3000); // يدخل بعد ثواني لين يمديه يقرا القبول او الرفض يعني عشانت في حال ما نتبه على الايميل اللي انرسل له 
+        return;
+      }
+
+      setCurrentUserId(found.id);
+      location.href='driverHome.html';
+    }
+  </script>
+</body>
+</html>
