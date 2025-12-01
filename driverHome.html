@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>الصفحة الرئيسية (السائق)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+  :root{
+    --bg:#f8f3ee; 
+    --white:#ffffff; 
+    --accent:#cbb796; 
+    --accent-hover:#b29a75;
+    --border:#ddd0c8;
+    --text:#3b2f24; 
+    --muted:#7a6a57;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; 
+    min-height:100vh; 
+    display:flex; 
+    align-items:center; 
+    justify-content:center;
+    background:var(--bg); 
+    font-family:'Tajawal',sans-serif; 
+    color:var(--text);
+  }
+
+  .shell{
+    width:min(900px,95vw);
+    background:var(--white);
+    border:1px solid var(--border);
+    border-radius:18px;
+    box-shadow:0 8px 25px rgba(0,0,0,.1);
+    padding:0;
+    overflow:visible;
+    min-height:440px;
+    position:relative;
+  }
+
+  /* الهيدر */
+  .header{
+    background:var(--accent);
+    color:var(--white);
+    text-align:center;
+    font-weight:700;
+    font-size:22px;
+    padding:14px;
+    border-radius:18px 18px 0 0;
+    position:relative;
+  }
+
+  .content{
+    padding:32px 26px;
+    text-align:center;
+  }
+
+  .lead{
+    color:#5b4d3f;
+    line-height:1.9;
+    font-size:16px;
+    margin-bottom:25px;
+  }
+
+  .main-btn{
+    background:var(--accent);
+    color:#fff;
+    font-weight:700;
+    border:none;
+    border-radius:14px;
+    padding:14px 30px;
+    cursor:pointer;
+    font-size:16px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.1);
+    transition:background 0.25s ease, transform 0.25s ease;
+  }
+  .main-btn:hover{
+    background:var(--accent-hover);
+    transform:translateY(-2px);
+  }
+
+  /* زر القائمة الجانبية */
+  .ham{
+    position:absolute; 
+    top:12px; 
+    right:14px; 
+    width:40px; 
+    height:40px; 
+    border-radius:10px;
+    background:var(--white); 
+    border:1px solid var(--border);
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    cursor:pointer;
+    box-shadow:0 3px 10px rgba(0,0,0,.06);
+  }
+  .ham span, .ham span:before, .ham span:after{
+    display:block; width:18px; height:2px; background:var(--muted); content:"";
+    position:relative; border-radius:2px;
+  }
+  .ham span:before{ position:absolute; right:0; top:-6px; }
+  .ham span:after{ position:absolute; right:0; top:6px; }
+
+ 
+  .backdrop{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,.15);
+    z-index:2;
+    display:none;
+  }
+  .backdrop.show{ display:block; }
+
+  /* القائمه نفسها */
+  .menuSheet{
+    position:absolute;
+    top:12px;
+    right:0;
+    bottom:12px;
+    width:320px;
+    background:#f5efe6;
+    border-left:1px solid var(--border);
+    border-radius:16px 0 0 16px;
+    box-shadow:-10px 0 24px rgba(0,0,0,.06);
+    display:none;
+    padding:18px;
+    padding-bottom:60px;
+    z-index:3;
+    opacity:0;
+    transform:translateX(40px);
+    transition:opacity .25s ease, transform .25s ease;
+  }
+  .menuSheet.open{display:block; opacity:1; transform:translateX(0);}
+  .menuSheet h3{ margin:6px 0 14px; color:#2f281f; text-align:right; }
+  .m{
+    width:100%; padding:13px 16px; margin:12px 0;
+    border:none; border-radius:14px; cursor:pointer;
+    background:var(--accent); color:#fff; font-weight:700;
+    box-shadow:0 6px 16px rgba(0,0,0,.06);
+  }
+  .m:hover{ background:var(--accent-hover); }
+
+  .m.logout{
+    background:#d87a6b;
+    margin-top:24px;
+  }
+  .m.logout:hover{
+    background:#c36658;
+  }
+
+  @media (max-width:640px){
+    .menuSheet{ width:86vw; }
+    .header{ font-size:20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <div class="header">
+    الصفحة الرئيسية (السائق)
+    <button class="ham" aria-label="القائمة" onclick="toggleMenu()"><span></span></button>
+  </div>
+
+  <!--إشعار التقويم الجامعي (يظهر فقط عند وجود أحداث اليوم أو بعد ٣ أيام) -->
+   <!--احتجنا نحطه هنا لاننا نبيه يظهر للسايق اول ما يدخل النظام حتى اننا اجبرناه ما ينتقل للصفحه الريئسيه لين يضغط اوكيه-->
+  <div id="eventsOverlay"
+       style="display:none; position:absolute; inset:0; background:rgba(0,0,0,.25);
+              z-index:4; align-items:center; justify-content:center;">
+    <div style="background:#fffdf9; border-radius:14px; max-width:520px; width:90%;
+                padding:18px 18px 14px; border:1px solid #decfbf; text-align:right;
+                box-shadow:0 10px 30px rgba(0,0,0,.18);">
+      <h2 style="margin:0 0 8px; font-size:17px; color:#3b2f24;">إشعار من التقويم الجامعي</h2>
+      <div id="eventsOverlayContent"
+           style="font-size:14px; color:#5b4d3f; line-height:1.8;
+                  max-height:220px; overflow-y:auto;"></div>
+      <div style="text-align:left; margin-top:12px;">
+        <button type="button" onclick="dismissEventsOverlay()"
+                style="min-width:90px; padding:7px 16px; border-radius:999px;
+                       border:none; background:#cbb796; color:#fff;
+                       font-weight:600; cursor:pointer;">
+          حسنًا
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <p class="lead">أهلاً بك! يمكنك إدارة رحلاتك، متابعة الطلبات، والاطلاع على سجل المشاوير.</p><div id="currentRideBox" style="margin-bottom:18px; display:none; text-align:right;"></div>
+    <button class="main-btn" onclick="go('offerRide.html')">إنشاء / جدولة رحلة</button>
+    <button class="main-btn" onclick="go('groupChat.html')" style="display:block; margin:18px auto 0;">
+      الدردشات الجماعية
+    </button>
+    <button class="main-btn" onclick="go('universityCalendar.html')" style="display:block; margin:18px auto 0;">تصفح التقويم الجامعي</button>
+  </div>
+
+  <!-- الخلفيه الشفافه حقت القائمه الجانبيه -->
+  <div id="menuBackdrop" class="backdrop" onclick="closeMenu()"></div>
+
+  <!-- القائمه الجانبيه -->
+  <aside id="menuSheet" class="menuSheet" aria-hidden="true">
+    <button class="m" type="button" onclick="location.href='profile.html'">الملف الشخصي</button>
+    <button class="m" onclick="go('rideHistory.html')">سجل الرحلات</button>
+    <button class="m" onclick="go('reports.html')">بلاغاتي</button>
+    <button class="m" onclick="go('contacts.html')">جهات الاتصال</button>
+    <button class="m" onclick="go('helpCenter.html')">مركز المساعدة</button>
+    <button class="m logout" onclick="doLogout()">تسجيل خروج</button>
+  </aside>
+</div>
+
+<script src="notifications-bar.js"></script>
+<script>
+  function loadRides(){
+    try{return JSON.parse(localStorage.getItem('rs_rides')||'[]');}
+    catch(e){return[];}
+  }
+  function fmtTime(iso){ return new Date(iso).toLocaleString(); }
+  function escapeHtml(s){
+    return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  }
+  function toggleMenu(){
+    const s = document.getElementById('menuSheet');
+    const b = document.getElementById('menuBackdrop');
+    const isOpen = s.classList.contains('open');
+    if(isOpen){
+      s.classList.remove('open');
+      b.classList.remove('show');
+      setTimeout(()=>{ s.style.display='none'; }, 250);
+    } else {
+      s.style.display='block';
+      setTimeout(()=>{ s.classList.add('open'); }, 10);
+      b.classList.add('show');
+    }
+    s.setAttribute('aria-hidden', isOpen ? 'true' : 'false');
+  }
+
+  function closeMenu(){
+    const s = document.getElementById('menuSheet');
+    const b = document.getElementById('menuBackdrop');
+    if(!s.classList.contains('open')) return;
+    s.classList.remove('open');
+    b.classList.remove('show');
+    setTimeout(()=>{ s.style.display='none'; }, 250);
+    s.setAttribute('aria-hidden','true');
+  }
+
+  function go(url){ location.href = url; }
+
+  function doLogout(){
+    localStorage.setItem('rs_current_user_id','');
+    localStorage.setItem('rs_current_role','');
+    location.href = 'loginDriver.html';
+  }
+  function initCurrentRideForDriver(){
+    const box = document.getElementById('currentRideBox');
+    if(!box) return;
+
+    const userId = localStorage.getItem('rs_current_user_id') || '';
+    const role   = localStorage.getItem('rs_current_role') || '';
+    const rideId = localStorage.getItem('rs_current_ride_id');
+
+    if(!userId || role !== 'driver' || !rideId){
+      box.style.display = 'none';
+      return;
+    }
+
+    const rides = loadRides();
+    const ride  = rides.find(r => r.id === rideId);
+    if(!ride){
+      box.style.display = 'none';
+      return;
+    }
+
+    // لازم يكون هو السائق لهذه الرحلة فعلاً موا اي سائق فالنظام تظهر له اي رحله حاليه
+    if(ride.driverId !== userId){
+      box.style.display = 'none';
+      return;
+    }
+
+    const st = ride.status || 'open';
+    if(['open','pending_payment','in_progress'].indexOf(st) === -1){
+      box.style.display = 'none';
+      return;
+    }
+
+    let statusLabel = 'لم تبدأ بعد';
+    if(st === 'pending_payment') statusLabel = 'بانتظار الدفع لانطلاق الرحلة';
+    else if(st === 'in_progress') statusLabel = 'الرحلة جارية الآن';
+
+    box.style.display = 'block';
+    box.innerHTML = `
+      <div style="border:1px solid #decfbf;border-radius:12px;padding:10px 12px;background:#fffaf3;">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:4px;">لديك رحلة نشطة كسائق:</div>
+        <div style="font-size:14px;font-weight:700;">
+          ${escapeHtml(ride.from?.name || '؟')} → ${escapeHtml(ride.to?.name || '؟')}
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+          الوقت: ${fmtTime(ride.departAt)} · الحالة: ${statusLabel}
+        </div>
+        <button style="margin-top:8px;" class="main-btn" onclick="go('currentRide.html')">
+          متابعة الرحلة الحالية
+        </button>
+      </div>
+    `;
+  }
+
+  // ----- سكربت إشعارات التقويم الجامعي للسائق -----
+  const EVENTS_STORAGE_KEY = 'rs_univ_events';
+
+  function loadCalendarEvents(){
+    try{
+      const raw = localStorage.getItem(EVENTS_STORAGE_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    }catch(e){
+      return [];
+    }
+  }
+
+  function showEventsOverlayIfNeeded(){
+    const role   = localStorage.getItem('rs_current_role') || '';
+    const userId = localStorage.getItem('rs_current_user_id') || '';
+    const overlay = document.getElementById('eventsOverlay');
+    const content = document.getElementById('eventsOverlayContent');
+
+ 
+    if(!overlay || !content || role !== 'driver' || !userId){
+      return;
+    }
+
+    const events = loadCalendarEvents();
+    if(!events.length) return;
+
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    const todayEvents   = [];
+    const in3DaysEvents = [];
+
+    events.forEach(ev=>{
+      if(!ev.date) return;
+      const d = new Date(ev.date);
+      if(isNaN(d.getTime())) return;
+
+      d.setHours(0,0,0,0);
+      const diffMs   = d.getTime() - today.getTime();
+      const diffDays = Math.round(diffMs / (1000*60*60*24));
+
+      if(diffDays === 0){
+        todayEvents.push(ev);
+      }else if(diffDays === 3){
+        in3DaysEvents.push(ev);
+      }
+    });
+
+    // ما فيه شي اليوم ولا بعد ثلاث أيام
+    if(!todayEvents.length && !in3DaysEvents.length){
+      return;
+    }
+
+    let html = '';
+
+    if(in3DaysEvents.length){
+      html += `
+        <div style="margin-bottom:6px;">
+          بعد ٣ أيام توجد الأحداث الجامعية التالية:
+        </div>
+        <ul style="margin:0 0 8px 0; padding-right:18px;">
+      `;
+      in3DaysEvents.forEach(ev=>{
+        const dText = ev.date ? new Date(ev.date).toLocaleDateString('ar-SA') : '';
+        html += `
+          <li>
+            <strong>${escapeHtml(ev.title || 'حدث جامعي')}</strong>
+            — التاريخ: ${dText}
+            ${ev.desc ? ' — ' + escapeHtml(ev.desc) : ''}
+          </li>
+        `;
+      });
+      html += '</ul>';
+    }
+
+    if(todayEvents.length){
+      html += `
+        <div style="margin-top:4px; margin-bottom:6px;">
+          اليوم لديك أحداث جامعية:
+        </div>
+        <ul style="margin:0; padding-right:18px;">
+      `;
+      todayEvents.forEach(ev=>{
+        const dText = ev.date ? new Date(ev.date).toLocaleDateString('ar-SA') : '';
+        html += `
+          <li>
+            <strong>${escapeHtml(ev.title || 'حدث جامعي')}</strong>
+            — التاريخ: ${dText}
+            ${ev.desc ? ' — ' + escapeHtml(ev.desc) : ''}
+          </li>
+        `;
+      });
+      html += '</ul>';
+    }
+
+    content.innerHTML = html;
+    overlay.style.display = 'flex'; 
+  }
+
+  function dismissEventsOverlay(){
+    const overlay = document.getElementById('eventsOverlay');
+    if(overlay) overlay.style.display = 'none';
+  }
+
+  window.addEventListener('load', function () {
+    initCurrentRideForDriver();   // الرحلة النشطة
+    showEventsOverlayIfNeeded();  // إشعار التقويم الجامعي (اليوم او بعد ٣ أيام)
+  });
+</script>
+
+</body>
+</html>
