@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <title>وحدة إشعارات السائقين</title>
+
+  <!-- إشعار نتيجة تقييم السائق -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script>
+    emailjs.init({ publicKey: 'B4JZd_o7oXjBgNa-_' });
+    const SERVICE_ID  = 'service_yswru0l';
+    const TEMPLATE_ID = 'template_14qs50b';
+
+    function sendDriverVerificationEmail(toEmail, toName, adminName, statusText, requestId) {
+      // نتأكد ما نرسل أكثر من مرة لنفس الطلب 
+      if (requestId) {
+        const sentKey = 'rs_notify_sent_' + requestId;
+        if (localStorage.getItem(sentKey) === '1') {
+          console.log('Notification already sent for request', requestId);
+          return;
+        }
+      }
+
+      const params = {
+        to_email:    toEmail,
+        to_name:     toName,
+        admin_name:  adminName,
+        status_text: statusText
+      };
+
+      return emailjs.send(SERVICE_ID, TEMPLATE_ID, params)
+        .then(function (response) {
+          console.log('Driver verification email sent', response.status, response.text);
+          if (requestId) {
+            localStorage.setItem('rs_notify_sent_' + requestId, '1');
+          }
+          return true;
+        })
+        .catch(function (err) {
+          console.error('Email error', err);
+          return false;
+        });
+    }
+
+    window.sendDriverVerificationEmail = sendDriverVerificationEmail;
+  </script>
+</head>
+<body>
+  <!-- ما فيه اي واجهة هنا كله شغال ورا الكواليس -->
+</body>
+</html>
