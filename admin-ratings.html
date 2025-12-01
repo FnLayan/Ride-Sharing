@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>التقييمات المنخفضة</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{
+      --bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;
+      --accent:#cbb796;--accent-hover:#b29a75;
+      --text:#3b2f24;--muted:#7a6a57;--danger:#d87a6b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;background:var(--bg);
+      font-family:'Tajawal',sans-serif;color:var(--text);
+    }
+    .wrap{max-width:980px;margin:22px auto;padding:16px;}
+    .card{
+      background:var(--card);border:1px solid var(--border);
+      border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.08);
+      padding:16px;
+    }
+    h1{margin:0 0 6px;font-size:22px;color:var(--muted);text-align:center}
+    .muted{color:var(--muted);font-size:13px}
+    .rating-row{
+      border:1px solid #efe6db;border-radius:12px;
+      padding:10px 12px;margin-top:10px;background:#fff;
+    }
+    .top-line{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+    .badge{
+      display:inline-block;padding:3px 8px;border-radius:999px;
+      font-size:12px;border:1px solid #ddd0c8;background:#eee;
+    }
+    .badge-low{background:#fde8e8;border-color:#f2b9b9;color:#7a1f1f;}
+    .badge-handled{background:#e7f6ea;border-color:#cdecd2;color:#256029;}
+    .stars{color:#f4b400;font-size:15px;}
+    .names{font-size:14px;margin-top:3px;}
+    .comment{margin-top:4px;font-size:13px;}
+    .reasons{margin-top:4px;font-size:12px;color:#7a1f1f;}
+    .btn{
+      border:none;border-radius:10px;padding:6px 10px;
+      font-size:12px;font-weight:700;cursor:pointer;
+    }
+    .btn-main{background:var(--accent);color:#fff;}
+    .btn-main:hover{background:var(--accent-hover);}
+    .btn-ghost{
+      background:#fff;border:1px solid var(--border);color:var(--muted);
+    }
+    .empty{
+      margin-top:14px;padding:14px;border-radius:10px;
+      border:1px dashed #decfbf;background:#fff;text-align:center;
+      color:var(--muted);font-size:14px;
+    }
+    .filter-row{
+      display:flex;justify-content:space-between;align-items:center;
+      gap:8px;margin:10px 0 4px;flex-wrap:wrap;
+    }
+    select{
+      border-radius:8px;border:1px solid #e3d6c7;
+      padding:4px 8px;font-family:'Tajawal',sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>التقييمات المنخفضة</h1>
+
+      <div style="text-align:left; margin-bottom:8px;">
+          <button class="btn btn-ghost" onclick="goAdminHome()">عودة للوحة المسؤول</button>
+      </div>
+      <p class="muted">
+        تظهر هنا التقييمات ١ أو ٢ نجوم على السائقين. يمكن للمسؤول مراجعتها
+        ووضع علامة "تمت المتابعة" بعد التواصل مع الأطراف.
+      </p>
+
+      <div class="filter-row">
+        <div class="muted">تصفية حسب حالة المتابعة:</div>
+        <select id="statusFilter" onchange="renderList()">
+          <option value="all">الكل</option>
+          <option value="pending">بانتظار المتابعة</option>
+          <option value="handled">تمت المتابعة</option>
+        </select>
+      </div>
+
+      <div id="list"></div>
+
+      <div id="noAdmin" class="empty" style="display:none">
+        هذه الصفحة مخصصة للمسؤول فقط. تأكد من تسجيل الدخول بحساب Admin.
+      </div>
+    </div>
+  </div>
+
+<script>
+  function loadRatings(){ try{return JSON.parse(localStorage.getItem('rs_ratings')||'[]');}catch(e){return[];} }
+  function saveRatings(arr){ localStorage.setItem('rs_ratings', JSON.stringify(arr)); }
+  function loadRides(){ try{return JSON.parse(localStorage.getItem('rs_rides')||'[]');}catch(e){return[];} }
+  function loadUsers(){ try{return JSON.parse(localStorage.getItem('rs_users')||'[]');}catch(e){return[];} }
+  function escapeHtml(s){
+    return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  }
+  function fmtTime(iso){ return new Date(iso).toLocaleString(); }
+
+  let lowRatings = [];
+  let rides = [];
+  let users = [];
+
+  function ensureAdmin(){
+    const role = localStorage.getItem('rs_current_role') || '';
+    if(role !== 'admin'){
+      document.getElementById('noAdmin').style.display = 'block';
+      return false;
+    }
+    return true;
+  }
+
+  function init(){
+    if(!ensureAdmin()) return;
+
+    rides = loadRides();
+    users = loadUsers();
+
+    const all = loadRatings();
+    lowRatings = all.filter(r => r.isLow);
+
+    // الأحدث أول شي
+    lowRatings.sort((a,b)=> new Date(b.createdAt) - new Date(a.createdAt));
+    renderList();
+  }
+
+  function renderList(){
+    const listBox = document.getElementById('list');
+    if(!ensureAdmin()) return;
+
+    const filter = document.getElementById('statusFilter').value;
+    let items = lowRatings;
+    if(filter === 'pending'){
+      items = items.filter(r => r.adminStatus === 'pending');
+    }else if(filter === 'handled'){
+      items = items.filter(r => r.adminStatus === 'handled');
+    }
+
+    if(!items.length){
+      listBox.innerHTML = '<div class="empty">لا توجد تقييمات مطابقة للفلتر الحالي.</div>';
+      return;
+    }
+
+    let html = '';
+    items.forEach(r=>{
+      const ride = rides.find(x=>x.id===r.rideId);
+      const from = users.find(u=>u.id===r.fromUserId);
+      const to   = users.find(u=>u.id===r.toUserId);
+
+      const stars = '★★★★★'.slice(0,r.value) + '☆☆☆☆☆'.slice(r.value);
+      const reasonsText = (r.reasons && r.reasons.length)
+        ? 'الأسباب: ' + r.reasons.join('، ')
+        : '';
+
+      const adminBadge =
+        (r.adminStatus === 'handled')
+          ? '<span class="badge badge-handled">تمت المتابعة</span>'
+          : '<span class="badge badge-low">بانتظار المتابعة</span>';
+
+      html += `
+        <div class="rating-row">
+          <div class="top-line">
+            <div>
+              <div class="stars">${stars}</div>
+              <div class="muted">تقييم: ${r.value} / 5 · ${fmtTime(r.createdAt)}</div>
+            </div>
+            <div>
+              <span class="badge badge-low">تقييم منخفض</span>
+              ${adminBadge}
+            </div>
+          </div>
+          <div class="names">
+            الراكب: ${escapeHtml(from ? from.name : 'مجهول')}
+            → السائق: ${escapeHtml(to ? to.name : 'غير معروف')}
+          </div>
+          ${
+            ride
+              ? `<div class="muted">الرحلة: ${escapeHtml(ride.from?.name || '؟')} → ${escapeHtml(ride.to?.name || '؟')} · ${fmtTime(ride.departAt)}</div>`
+              : ''
+          }
+          ${r.comment ? `<div class="comment"><strong>التعليق:</strong> ${escapeHtml(r.comment)}</div>` : ''}
+          ${reasonsText ? `<div class="reasons">${escapeHtml(reasonsText)}</div>` : ''}
+          <div style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-main" onclick="toggleHandled('${r.id}')">
+              ${r.adminStatus === 'handled' ? 'إرجاعها لبانتظار المتابعة' : 'وضع علامة تمّت المتابعة'}
+            </button>
+            <button class="btn btn-ghost" onclick="openAdminChat('${r.toUserId}')">
+              محادثة مع صاحب التقييم
+            </button>
+          </div>
+        </div>
+      `;
+    });
+
+    listBox.innerHTML = html;
+  }
+
+  function toggleHandled(id){
+    const all = loadRatings();
+    const idx = all.findIndex(r=>r.id===id);
+    if(idx===-1) return;
+    const cur = all[idx];
+    cur.adminStatus = (cur.adminStatus === 'handled') ? 'pending' : 'handled';
+    saveRatings(all);
+
+    // نحدث النسخه
+    const idx2 = lowRatings.findIndex(r=>r.id===id);
+    if(idx2!==-1) lowRatings[idx2] = cur;
+    renderList();
+  }
+
+  // ===== المحادثه للأدمن في التقييمات المنخفضة =====
+  function loadContacts(){
+    try { return JSON.parse(localStorage.getItem('rs_contacts') || '[]'); }
+    catch(e){ return []; }
+  }
+  function saveContacts(arr){
+    localStorage.setItem('rs_contacts', JSON.stringify(arr));
+  }
+  function isAlreadyContact(a,b, list){
+    return list.some(c =>
+      (c.userId === a && c.contactUserId === b) ||
+      (c.userId === b && c.contactUserId === a)
+    );
+  }
+
+  function openAdminChat(targetUserId){
+    const currentUserId = localStorage.getItem('rs_current_user_id') || '';
+    const currentRole   = localStorage.getItem('rs_current_role') || '';
+
+    if(currentRole !== 'admin'){
+      alert('هذه الميزة للمسؤول فقط.');
+      return;
+    }
+    if(!targetUserId){
+      alert('تعذر تحديد صاحب التقييم المنخفض.');
+      return;
+    }
+
+    let contacts = loadContacts();
+
+    // لو ما بينهم تواصل قبلها نضيف على طول محادثه من الطرفين
+    if(!isAlreadyContact(currentUserId, targetUserId, contacts)){
+      const nowIso = new Date().toISOString();
+      contacts.push({
+        userId: currentUserId,
+        contactUserId: targetUserId,
+        createdAt: nowIso
+      });
+      contacts.push({
+        userId: targetUserId,
+        contactUserId: currentUserId,
+        createdAt: nowIso
+      });
+      saveContacts(contacts);
+    }
+
+    // نحدد الشخص في المحادثه الخاصه ونحول للصفحه
+    localStorage.setItem('rs_private_chat_user_id', targetUserId);
+    location.href = 'privateChat.html';
+  }
+
+  function goAdminHome(){
+     location.href = 'adminHome.html';
+  }
+
+  window.addEventListener('load', init);
+</script>
+</body>
+</html>
