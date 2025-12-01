@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>التقويم الجامعي</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{
+      --bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;
+      --accent:#cbb796;--accent-hover:#b29a75;
+      --text:#3b2f24;--muted:#7a6a57;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+      background:var(--bg);font-family:'Tajawal',sans-serif;color:var(--text)
+    }
+    .wrap{
+      width:min(900px,96vw);background:var(--card);border-radius:16px;
+      border:1px solid var(--border);box-shadow:0 8px 26px rgba(0,0,0,.08);
+      padding:20px 20px 24px;
+    }
+    .top{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      margin-bottom:8px;
+    }
+    h1{margin:0;font-size:20px;color:var(--muted);}
+    .role-label{font-size:13px;color:#8d7d6d}
+    .back-btn{
+      background:var(--accent);color:#fff;border:none;border-radius:999px;
+      padding:6px 14px;font-size:13px;cursor:pointer;font-weight:600;
+    }
+    .back-btn:hover{background:var(--accent-hover);}
+    .hint{margin:0 0 14px;font-size:13px;color:#7a6a57}
+
+    .grid{
+      display:grid;grid-template-columns:2fr 3fr;gap:18px;
+    }
+    @media(max-width:720px){ .grid{grid-template-columns:1fr;} }
+
+    .card{
+      background:#ffffff;border-radius:12px;border:1px solid var(--border);
+      padding:12px 12px 14px;
+    }
+    .card h2{
+      margin:0 0 8px;font-size:16px;color:var(--muted);
+      display:flex;justify-content:space-between;align-items:center;
+    }
+    .badge-admin{
+      font-size:11px;background:#e7f6ea;color:#256029;
+      border-radius:999px;padding:3px 8px;border:1px solid #cdecd2;
+    }
+
+    label{display:block;font-size:13px;margin:6px 0 3px;color:var(--muted);}
+    input[type="text"],input[type="date"],textarea{
+      width:100%;padding:8px;border-radius:8px;border:1px solid #e6dcca;
+      font-family:inherit;font-size:13px;background:#fff;
+    }
+    textarea{min-height:70px;resize:vertical;}
+    .btn{
+      margin-top:8px;background:var(--accent);color:#fff;border:none;
+      border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;
+      cursor:pointer;
+    }
+    .btn:hover{background:var(--accent-hover);}
+    .btn.secondary{
+      background:#eee2d4;color:#5b4d3f;margin-inline-start:6px;
+    }
+
+    .event{
+      border-bottom:1px solid #f0e5d8;padding:8px 0;
+    }
+    .event:last-child{border-bottom:none;}
+    .ev-title{font-weight:700;font-size:14px;margin-bottom:2px;}
+    .ev-date{font-size:12px;color:#7a6a57;margin-bottom:4px;}
+    .ev-desc{font-size:13px;margin:0 0 4px;}
+    .ev-actions button{
+      font-size:11px;padding:4px 8px;border-radius:6px;border:none;
+      cursor:pointer;margin-inline-start:4px;
+    }
+    .ev-actions .edit{background:#f1e3c8;color:#5b4d3f;}
+    .ev-actions .del{background:#f6caca;color:#7a1f1f;}
+
+    .empty{text-align:center;font-size:13px;color:#8d7d6d;padding:12px 4px;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <h1>التقويم الجامعي</h1>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div id="roleLabel" class="role-label"></div>
+      <button class="back-btn" onclick="goBack()">رجوع</button>
+    </div>
+  </div>
+  <p id="hint" class="hint"></p>
+
+  <div class="grid">
+    <!-- بطاقة خاصه بالإداره (تظهر فقط للادمن) -->
+    <section class="card" id="adminTools" style="display:none">
+      <h2>
+        إدارة أحداث التقويم
+        <span class="badge-admin">وضع المسؤول</span>
+      </h2>
+      <label>عنوان الحدث</label>
+      <input id="evTitle" type="text" placeholder="مثال: بداية الفصل الدراسي">
+
+      <label>التاريخ</label>
+      <input id="evDate" type="date">
+
+      <label>الوصف (اختياري)</label>
+      <textarea id="evDesc" placeholder="معلومات إضافية عن الحدث"></textarea>
+
+      <button class="btn" onclick="saveEvent()">حفظ الحدث</button>
+      <button class="btn secondary" type="button" onclick="resetForm()">إلغاء</button>
+
+      <div id="formMsg" style="font-size:12px;margin-top:6px;"></div>
+    </section>
+
+    <!-- بطاقة عرض الأحداث للجميع -->
+    <section class="card" id="eventsCard">
+      <h2>الأحداث القادمة</h2>
+      <div id="eventsList"></div>
+    </section>
+  </div>
+</div>
+
+<script src="notifications-bar.js"></script>
+<script>
+  const STORAGE_KEY = 'rs_univ_events';
+
+  function loadEvents(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    }catch(e){ return []; }
+  }
+  function saveEvents(arr){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(arr||[]));
+  }
+
+  function getRole(){ return localStorage.getItem('rs_current_role') || ''; }
+
+  let editingId = null;
+
+  (function initPage(){
+    const role = getRole();
+    const roleLabel = document.getElementById('roleLabel');
+    const hint = document.getElementById('hint');
+    const isAdmin = (role === 'admin');
+
+    if(isAdmin){
+      document.getElementById('adminTools').style.display = 'block';
+      roleLabel.textContent = 'مسجّل الدخول كمسؤول';
+      hint.textContent = 'يمكنك إضافة أحداث جديدة للتقويم الجامعي أو تعديلها أو حذفها. سيتم عرض هذه الأحداث لجميع المستخدمين.';
+    }else{
+      document.getElementById('adminTools').style.display = 'none';
+      roleLabel.textContent = (role === 'driver') ? 'مسجّل الدخول كسائق' :
+                              (role === 'passenger') ? 'مسجّل الدخول كراكب' :
+                              'زائر';
+      hint.textContent = 'يمكنك هنا استعراض مواعيد الأحداث الجامعية القادمة.';
+    }
+
+    renderEvents();
+  })();
+
+  function renderEvents(){
+    const listEl = document.getElementById('eventsList');
+    const events = loadEvents();
+
+    const today = new Date();
+    events.sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+
+    const upcoming = events.filter(e => !e.date || new Date(e.date) >= new Date(today.toDateString()));
+
+    if(!upcoming.length){
+      listEl.innerHTML = '<div class="empty">لا توجد أحداث مجدولة حاليًا.</div>';
+      return;
+    }
+
+    listEl.innerHTML = '';
+    const isAdmin = (getRole() === 'admin');
+
+    upcoming.forEach(ev=>{
+      const div = document.createElement('div');
+      div.className = 'event';
+
+      const dText = ev.date ? new Date(ev.date).toLocaleDateString('ar-SA') : '-';
+
+      div.innerHTML = `
+        <div class="ev-title">${escapeHtml(ev.title || 'حدث بدون عنوان')}</div>
+        <div class="ev-date">التاريخ: ${dText}</div>
+        <p class="ev-desc">${ev.desc ? escapeHtml(ev.desc) : '<span style="color:#8d7d6d">لا يوجد وصف</span>'}</p>
+      `;
+
+      if(isAdmin){
+        const act = document.createElement('div');
+        act.className = 'ev-actions';
+        act.innerHTML = `
+          <button class="edit" onclick="editEvent('${ev.id}')">تعديل</button>
+          <button class="del" onclick="deleteEvent('${ev.id}')">حذف</button>
+        `;
+        div.appendChild(act);
+      }
+
+      listEl.appendChild(div);
+    });
+  }
+
+  function saveEvent(){
+    const title = document.getElementById('evTitle').value.trim();
+    const date  = document.getElementById('evDate').value;
+    const desc  = document.getElementById('evDesc').value.trim();
+    const msgEl = document.getElementById('formMsg');
+
+    msgEl.textContent = '';
+
+    if(!title || !date){
+      msgEl.style.color = '#7a1f1f';
+      msgEl.textContent = 'الرجاء إدخال عنوان الحدث والتاريخ.';
+      return;
+    }
+
+    const events = loadEvents();
+    if(editingId){
+      const idx = events.findIndex(e=>e.id===editingId);
+      if(idx !== -1){
+        events[idx].title = title;
+        events[idx].date  = date;
+        events[idx].desc  = desc;
+      }
+      msgEl.style.color = '#256029';
+      msgEl.textContent = 'تم تحديث الحدث بنجاح.';
+    }else{
+      events.push({
+        id: 'ev-'+Date.now(),
+        title, date, desc
+      });
+      msgEl.style.color = '#256029';
+      msgEl.textContent = 'تم إضافة الحدث إلى التقويم.';
+    }
+
+    saveEvents(events);
+    resetForm(false);
+    renderEvents();
+  }
+
+  function editEvent(id){
+    const events = loadEvents();
+    const ev = events.find(e=>e.id===id);
+    if(!ev) return;
+
+    editingId = id;
+    document.getElementById('evTitle').value = ev.title || '';
+    document.getElementById('evDate').value  = ev.date || '';
+    document.getElementById('evDesc').value  = ev.desc || '';
+    const msgEl = document.getElementById('formMsg');
+    msgEl.style.color = '#7a6a57';
+    msgEl.textContent = 'يتم الآن تعديل الحدث، عدّل البيانات ثم اضغط "حفظ الحدث".';
+  }
+
+  function deleteEvent(id){
+    if(!confirm('هل أنت متأكد من حذف هذا الحدث من التقويم؟')) return;
+    const events = loadEvents().filter(e=>e.id !== id);
+    saveEvents(events);
+    if(editingId === id) resetForm(false);
+    renderEvents();
+  }
+
+  function resetForm(clearMsg = true){
+    editingId = null;
+    document.getElementById('evTitle').value = '';
+    document.getElementById('evDate').value  = '';
+    document.getElementById('evDesc').value  = '';
+    if(clearMsg) document.getElementById('formMsg').textContent = '';
+  }
+
+  function goBack(){
+    const role = getRole();
+    if(role === 'admin')     location.href = 'adminHome.html';
+    else if(role === 'driver') location.href = 'driverHome.html';
+    else if(role === 'passenger') location.href = 'passengerHome.html';
+    else location.href = 'index.html';
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"]/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'
+    }[c]));
+  }
+</script>
+</body>
+</html>
