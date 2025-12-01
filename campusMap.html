@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>خريطة الحرم الجامعي</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{
+      --bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;
+      --accent:#cbb796;--accent-hover:#b29a75;
+      --text:#3b2f24;--muted:#7a6a57;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;background:var(--bg);
+      font-family:'Tajawal',sans-serif;color:var(--text);
+    }
+    .wrap{max-width:960px;margin:16px auto;padding:12px}
+    .card{
+      background:var(--card);border:1px solid var(--border);
+      border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.1);
+      padding:12px;
+    }
+    h1{margin:0 0 8px;font-size:20px;color:var(--muted);text-align:center}
+    p{margin:0 0 8px;font-size:13px;color:var(--muted);text-align:center}
+    #map{width:100%;height:420px;border-radius:10px;border:1px solid #e1d6c7;margin-top:6px}
+    .btn-row{margin-top:10px;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+    .btn{
+      border:none;border-radius:8px;padding:8px 12px;font-size:13px;
+      font-weight:700;cursor:pointer;
+    }
+    .btn-main{background:var(--accent);color:#fff;}
+    .btn-main:hover{background:var(--accent-hover);}
+    .btn-ghost{background:#fff;border:1px solid var(--border);color:var(--muted);}
+    .btn-ghost:hover{background:#f3ebe0;}
+    .info{margin-top:6px;font-size:13px;color:var(--muted);}
+    .strong{font-weight:700;}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>خريطة الحرم الجامعي – جامعة الإمام</h1>
+    <p>اختاري مبنى أو بوابة من الخريطة لاستخدامه كنقطة انطلاق أو وصول في إنشاء الرحلة.</p>
+    <div id="map"></div>
+    <div class="info" id="selInfo">لم يتم اختيار نقطة بعد.</div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goBack()">إلغاء</button>
+      <button class="btn btn-main" onclick="confirmSelection()">تأكيد الاختيار</button>
+    </div>
+  </div>
+</div>
+
+<script src="notifications-bar.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const CAMPUS_POINTS = [
+  { id:'cs_islamic',     name:'كلية الحاسب وأصول الدين', lat:24.8136478, lng:46.6908884 },
+  { id:'languages_med',  name:'كلية اللغات والترجمة والطب', lat:24.8166371, lng:46.6905038 },
+  { id:'sharia_science', name:'كلية الشريعة والعلوم', lat:24.8151018, lng:46.6936990 },
+  { id:'deanships',      name:'مبنى العمادات', lat:24.8130948, lng:46.6932045 },
+  { id:'business',       name:'كلية الأعمال', lat:24.8092761, lng:46.6931974 },
+  { id:'media_social',   name:'كلية الإعلام والعلوم الاجتماعية', lat:24.8078759, lng:46.6947849 },
+  { id:'prep_building',  name:'مبنى التحضيري', lat:24.8103903, lng:46.6961059 },
+  { id:'gate_17', name:'بوابة التفويج رقم 17', lat:24.8068347, lng:46.6946891 },
+  { id:'gate_18', name:'بوابة التفويج رقم 18', lat:24.8068993, lng:46.6950857 },
+  { id:'gate_19', name:'بوابة التفويج رقم 19', lat:24.8071427, lng:46.6953908 },
+  { id:'gate_20', name:'بوابة التفويج رقم 20', lat:24.8072751, lng:46.6957428 },
+  { id:'gate_21', name:'بوابة التفويج رقم 21', lat:24.8074093, lng:46.6960912 },
+  { id:'gate_22', name:'بوابة التفويج رقم 22', lat:24.8075414, lng:46.6964389 },
+  { id:'gate_23', name:'بوابة التفويج رقم 23', lat:24.8077143, lng:46.6967735 }
+];
+
+let map;
+
+const pickTarget = localStorage.getItem('rs_campus_pick_target') || 'both';
+
+// single-selection
+let selectedPoint = null;
+
+// both mode
+let selectedFrom = null;
+let selectedTo   = null;
+let fromMarker   = null;
+let toMarker     = null;
+
+function initMap(){
+  map = L.map('map').setView([24.812, 46.694], 16);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+  }).addTo(map);
+
+  CAMPUS_POINTS.forEach(p=>{
+    const m = L.marker([p.lat,p.lng]).addTo(map).bindPopup(p.name);
+    m.on('click', ()=> onPointClick(p));
+  });
+
+  updateInfo();
+}
+
+function onPointClick(p){
+  // اختيار نقطة واحدة
+  if (pickTarget === 'from' || pickTarget === 'to'){
+    selectedPoint = p;
+    updateInfo();
+    return;
+  }
+
+  // اختيار الانطلاق والوصول
+  if(!selectedFrom){
+    selectedFrom = p;
+    if(fromMarker) map.removeLayer(fromMarker);
+    fromMarker = L.marker([p.lat,p.lng]).addTo(map).bindPopup('نقطة الانطلاق');
+  }else if(!selectedTo){
+    selectedTo = p;
+    if(toMarker) map.removeLayer(toMarker);
+    toMarker = L.marker([p.lat,p.lng]).addTo(map).bindPopup('نقطة الوصول');
+  }else{
+    selectedTo = p;
+    if(toMarker) map.removeLayer(toMarker);
+    toMarker = L.marker([p.lat,p.lng]).addTo(map).bindPopup('نقطة الوصول');
+  }
+  updateInfo();
+}
+
+function updateInfo(){
+  const info = document.getElementById('selInfo');
+
+  if (pickTarget === 'from' || pickTarget === 'to'){
+    if(!selectedPoint){
+      info.textContent = 'لم يتم اختيار نقطة بعد.';
+    }else{
+      const label = pickTarget === 'from' ? 'نقطة الانطلاق' : 'نقطة الوصول';
+      info.innerHTML = label + ': <span class="strong">' + selectedPoint.name + '</span>';
+    }
+    return;
+  }
+
+  let html = '';
+  if(selectedFrom){
+    html += '🚗 انطلاق: <span class="strong">'+selectedFrom.name+'</span><br>';
+  }
+  if(selectedTo){
+    html += '🎯 وصول: <span class="strong">'+selectedTo.name+'</span><br>';
+  }
+  if(!html) html = 'لم يتم اختيار أي نقطة بعد.';
+  info.innerHTML = html;
+}
+
+function confirmSelection(){
+  //  اختيار واحد
+  if (pickTarget === 'from' || pickTarget === 'to'){
+    if(!selectedPoint){
+      alert('اختاري نقطة من الخريطة أولاً.');
+      return;
+    }
+
+    let payload = {};
+    try{
+      payload = JSON.parse(localStorage.getItem('rs_campus_selected_points') || '{}');
+    }catch(e){
+      payload = {};
+    }
+
+    payload[pickTarget] = {
+      name: selectedPoint.name,
+      lat:  selectedPoint.lat,
+      lng:  selectedPoint.lng
+    };
+
+    localStorage.setItem('rs_campus_selected_points', JSON.stringify(payload));
+    localStorage.removeItem('rs_campus_pick_target');
+    location.href = 'offerRide.html';
+    return;
+  }
+
+  // اختيار النقطتين
+  if(!selectedFrom || !selectedTo){
+    alert('اختاري نقطتي الانطلاق والوصول من الخريطة أولاً.');
+    return;
+  }
+
+  const payload = {
+    from: selectedFrom,
+    to:   selectedTo
+  };
+  localStorage.setItem('rs_campus_selected_points', JSON.stringify(payload));
+  localStorage.removeItem('rs_campus_pick_target');
+  location.href = 'offerRide.html';
+}
+
+function goBack(){
+  localStorage.removeItem('rs_campus_pick_target');
+  location.href = 'offerRide.html';
+}
+
+window.addEventListener('load', initMap);
+</script>
+</body>
+</html>
