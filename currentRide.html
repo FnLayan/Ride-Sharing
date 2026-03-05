@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>الرحلة الحالية</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{
+      --bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;
+      --accent:#cbb796;--accent-hover:#b29a75;
+      --text:#3b2f24;--muted:#7a6a57;
+      --danger:#d87a6b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;padding:0;min-height:100vh;
+      background:var(--bg);
+      font-family:'Tajawal',sans-serif;
+      color:var(--text);
+      display:flex;justify-content:center;align-items:flex-start;
+    }
+    .shell{
+      margin:20px auto;
+      width:min(980px,96vw);
+      background:var(--card);
+      border-radius:16px;
+      border:1px solid var(--border);
+      box-shadow:0 10px 26px rgba(0,0,0,.1);
+      overflow:hidden;
+    }
+    .header{
+      padding:14px 18px;
+      background:var(--accent);
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .header h1{margin:0;font-size:20px;}
+    .role-tag{
+      font-size:13px;
+      background:rgba(255,255,255,.18);
+      padding:4px 10px;
+      border-radius:999px;
+    }
+    .back-btn{
+      background:#fff;
+      color:var(--accent);
+      border:none;
+      border-radius:999px;
+      padding:6px 12px;
+      font-size:12px;
+      cursor:pointer;
+      font-weight:700;
+      box-shadow:0 0 0 1px rgba(255,255,255,.6);
+    }
+    .back-btn:hover{
+      background:#f3ebe0;
+    }
+    .content{
+      padding:18px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:14px;
+    }
+    .left,.right{flex:1;min-width:260px}
+    .section-title{
+      font-size:15px;font-weight:700;color:var(--muted);margin-bottom:6px;
+    }
+    .muted{color:var(--muted);font-size:13px}
+    .map-box{margin-top:6px}
+    #map{
+      height:300px;
+      border-radius:12px;
+      border:1px solid #e0d6c8;
+    }
+    .btn{
+      background:var(--accent);color:#fff;
+      border:none;border-radius:10px;
+      padding:10px 14px;cursor:pointer;
+      font-weight:700;font-size:14px;
+    }
+    .btn:hover{background:var(--accent-hover);}
+    .btn-danger{background:var(--danger);}
+    .btn-danger:hover{background:#c36658;}
+    .btn-ghost{
+      background:#fff;color:var(--accent);
+      border:1px solid var(--accent);
+    }
+    .btn-ghost:hover{background:#f3ebe0;}
+    .btn-row{
+      display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;
+    }
+    .stat-card{
+      border:1px solid #efe6db;
+      border-radius:10px;
+      padding:10px 12px;
+      margin-bottom:8px;
+      background:#fff;
+    }
+    .stat-title{font-size:13px;color:var(--muted);margin-bottom:2px;}
+    .stat-value{font-weight:700;font-size:15px;}
+    .passenger-list{
+      list-style:none;margin:6px 0 0;padding:0;font-size:13px;color:var(--muted);
+    }
+    .passenger-list li{margin-bottom:2px;}
+    .status-badge{
+      display:inline-block;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:12px;
+      background:#eee;
+      border:1px solid #ddd0c8;
+      margin-inline-start:6px;
+    }
+    .status-pendingpayment{background:#ffe9b3;border-color:#e0b76a;}
+    .status-inprogress{background:#d0f0d0;border-color:#8fbf8f;}
+    .status-completed{background:#e0e0e0;border-color:#b0b0b0;}
+    .footer-note{
+      padding:10px 16px;
+      border-top:1px solid #eee4da;
+      font-size:12px;
+      color:var(--muted);
+      background:#fffaf3;
+      text-align:center;
+    }
+    .empty{
+      padding:16px;
+      text-align:center;
+      font-size:14px;
+      color:var(--muted);
+    }
+
+    .pay-overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.35);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:999;
+    }
+    .pay-overlay.show{display:flex;}
+    .pay-modal{
+      background:var(--card);
+      border-radius:14px;
+      padding:18px;
+      width:min(360px,90vw);
+      box-shadow:0 10px 30px rgba(0,0,0,.2);
+      border:1px solid var(--border);
+      text-align:right;
+    }
+    .pay-modal h3{
+      margin:0 0 6px;
+      font-size:16px;
+      color:var(--text);
+    }
+    .pay-modal p{
+      margin:4px 0 10px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .pay-option{
+      width:100%;
+      margin-top:6px;
+      justify-content:center;
+    }
+    .pay-cancel{
+      width:100%;
+      margin-top:10px;
+      justify-content:center;
+      background:#fff;
+      color:var(--muted);
+      border:1px solid var(--border);
+    }
+    .pay-cancel:hover{
+      background:#f3ebe0;
+    }
+
+    @media(max-width:700px){
+      .header{flex-direction:column;align-items:flex-start;}
+    }
+  </style>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+  <div class="shell" id="rootShell" style="display:none">
+    <div class="header">
+      <div>
+        <h1 id="rideTitle">الرحلة الحالية</h1>
+        <div class="muted" id="rideSub"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px">
+        <span class="role-tag" id="roleTag"></span>
+        <button type="button" class="back-btn" onclick="goHome()">
+          الرجوع للصفحة الرئيسية
+        </button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="left">
+        <div class="section-title">تفاصيل الرحلة</div>
+        <div class="stat-card">
+          <div class="stat-title">المسار</div>
+          <div class="stat-value" id="routeText"></div>
+          <div class="muted" id="timeText" style="margin-top:4px"></div>
+          <div class="muted" id="driverText" style="margin-top:2px"></div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-title">حالة الرحلة</div>
+          <div class="stat-value">
+            <span id="statusLabel"></span>
+            <span id="statusBadge" class="status-badge"></span>
+          </div>
+        </div>
+
+        <div class="stat-card" id="driverStats">
+          <div class="stat-title">الركاب الحاليون</div>
+          <div class="stat-value" id="capacityText"></div>
+          <ul class="passenger-list" id="passengerList"></ul>
+        </div>
+
+        <div class="stat-card" id="fareCard">
+          <div class="stat-title">الأجرة التقديرية (تقسيم ذكي على الركاب)</div>
+          <div class="stat-value" id="fareValue"></div>
+          <div class="muted" id="fareHint"></div>
+        </div>
+
+        <!-- أزرار خاصه بالسائق -->
+        <div class="btn-row" id="driverButtons">
+          <button class="btn" id="startBtn" onclick="startRide()">بدء الرحلة</button>
+          <button class="btn btn-ghost" id="finishBtn" onclick="finishRide()">إنهاء الرحلة</button>
+        </div>
+
+        <!-- أزرار بالراكب -->
+        <div class="btn-row" id="passengerButtons" style="display:none">
+          <button class="btn" id="payBtn" onclick="payFare()">دفع الأجرة الآن</button>
+          <span class="muted" id="payStatus" style="align-self:center;"></span>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="section-title">الخريطة و الأمان</div>
+        <div class="map-box">
+          <div id="map"></div>
+        </div>
+
+        <div class="btn-row" style="margin-top:10px">
+          <button class="btn btn-danger" onclick="showEmergency()">زر الطوارئ</button>
+          <button class="btn btn-ghost" onclick="shareRide()">مشاركة الرحلة</button>
+          <button class="btn btn-ghost" onclick="goChat()">محادثة الرحلة</button>
+          <button class="btn btn-ghost" onclick="goReport()">الإبلاغ عن مشكلة</button>
+        </div>
+
+        <div class="muted" style="margin-top:6px;font-size:12px">
+          زر الطوارئ يعرض أرقام الشرطة والمرور والإسعاف في المملكة. مشاركة الرحلة تنسخ/ترسل تفاصيل
+          المسار والوقت لصديقة موثوقة. الدفع هنا محاكاة لأغراض المشروع فقط.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="emptyState" class="empty">
+    لا توجد رحلة حالية مرتبطة بحسابك.<br>
+  </div>
+
+  <!-- مودلز طرق الدفع وهميه -->
+  <div id="payOverlay" class="pay-overlay">
+    <div class="pay-modal">
+      <h3>اختيار طريقة الدفع</h3>
+      <p id="payAmountText">اختر طريقة الدفع المناسبة لك. هذه مجرد محاكاة ولا يوجد خصم حقيقي.</p>
+      <button class="btn pay-option" onclick="confirmPayment('Apple Pay')">Apple Pay (افتراضي)</button>
+      <button class="btn pay-option" onclick="confirmPayment('بطاقة مدى / فيزا')">بطاقة مدى / فيزا</button>
+      <button class="btn pay-option" onclick="confirmPayment('STC Pay')">STC Pay</button>
+      <button class="pay-cancel" type="button" onclick="hidePaymentModal()">إلغاء</button>
+    </div>
+  </div>
+
+  <script src="notifications-bar.js"></script>
+  <script>
+    function loadRides(){ try{return JSON.parse(localStorage.getItem('rs_rides')||'[]');}catch(e){return[];} }
+    function loadUsers(){ try{return JSON.parse(localStorage.getItem('rs_users')||'[]');}catch(e){return[];} }
+    function loadBookings(){ try{return JSON.parse(localStorage.getItem('rs_bookings')||'[]');}catch(e){return[];} }
+
+    function haversineKm(a,b){
+      if(!a||!b||a.lat==null||a.lng==null||b.lat==null||b.lng==null) return 0;
+      const toRad=d=>d*Math.PI/180;
+      const R=6371,dLat=toRad(b.lat-a.lat),dLng=toRad(b.lng-a.lng);
+      const s=Math.sin(dLat/2)**2+Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
+      return 2*R*Math.asin(Math.sqrt(s));
+    }
+
+    function fmtTime(iso){ return new Date(iso).toLocaleString(); }
+
+    function escapeHtml(s){
+      return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    }
+
+    // ========= مسار فعلي باستخدام OSRM =========
+    let routePointsGlobal = null;
+    let routeDistanceKmGlobal = 0;
+
+    async function fetchRouteAndDraw(from,to){
+      routePointsGlobal = null;
+      routeDistanceKmGlobal = 0;
+
+      const url =
+        'https://router.project-osrm.org/route/v1/driving/' +
+        from.lng + ',' + from.lat + ';' +
+        to.lng   + ',' + to.lat +
+        '?overview=full&geometries=geojson';
+
+      try{
+        const res = await fetch(url);
+        if(!res.ok) throw new Error('route error');
+        const data = await res.json();
+        if(!data.routes || !data.routes[0]) throw new Error('no route');
+
+        const route = data.routes[0];
+        routeDistanceKmGlobal = (route.distance || 0) / 1000;
+        routePointsGlobal = route.geometry.coordinates.map(c => [c[1], c[0]]);
+
+        drawRouteOnMap();
+        renderBasics();
+      }catch(e){
+        console.error('OSRM error', e);
+        routePointsGlobal = [[from.lat,from.lng],[to.lat,to.lng]];
+        routeDistanceKmGlobal = haversineKm(from,to);
+        drawRouteOnMap();
+        renderBasics();
+      }
+    }
+
+    let currentRide = null;
+    let isDriver = false;
+    let joinedPassengers = [];
+    let paidCount = 0;
+    let passengerPaid = false;
+    let currentUserId = '';
+    let currentRole = '';
+
+    let map, fromMarker, toMarker, pathLine;
+    let pendingBookingId = null; // للحجز الذي نبي ندفع له
+
+    function notifyRideStatusChange(newStatusText){
+      if (!currentRide || !window.rsAddNotificationMany) return;
+
+      const rideLabel = currentRide.from.name + ' → ' + currentRide.to.name;
+      const msg = 'تحديث حالة الرحلة: ' + newStatusText +
+                  ' للرحلة من ' + rideLabel + '.';
+
+      // نجمع كل المشاركين عشان نعرضهم: السائق + الركاب المنضمين
+      const ids = [currentRide.driverId].concat(
+        joinedPassengers.map(p => p.id)
+      );
+
+      window.rsAddNotificationMany(ids, msg, 'status', currentRide.id);
+    }
+    function calcFare(ride, passengerCount){
+      let distanceKm = routeDistanceKmGlobal || haversineKm(ride.from, ride.to);
+      const baseFare = 5;
+      const ratePerKm = 1.5;
+      const total = Math.max(5, Math.round(baseFare + distanceKm * ratePerKm));
+      const perPassenger = passengerCount>0 ? Math.round(total / passengerCount) : 0;
+      return {distanceKm,total,perPassenger};
+    }
+
+    function init(){
+      const rideId = localStorage.getItem('rs_current_ride_id');
+      currentUserId = localStorage.getItem('rs_current_user_id') || '';
+      currentRole   = localStorage.getItem('rs_current_role') || '';
+
+      if(!rideId){
+        // لا يوجد رحلة حالية
+        document.getElementById('rootShell').style.display='none';
+        document.getElementById('emptyState').style.display='block';
+        return;
+      }
+
+      const rides = loadRides();
+      const ride = rides.find(r=>r.id===rideId);
+      if(!ride){
+        localStorage.setItem('rs_current_ride_id','');
+        localStorage.setItem('rs_current_ride_role','');
+        document.getElementById('rootShell').style.display='none';
+        document.getElementById('emptyState').style.display='block';
+        return;
+      }
+
+      // إذا الرحلة منتهية ما نعتبرها رحلة حالية
+      if(ride.status === 'completed'){
+        localStorage.setItem('rs_current_ride_id','');
+        localStorage.setItem('rs_current_ride_role','');
+        document.getElementById('rootShell').style.display='none';
+        document.getElementById('emptyState').style.display='block';
+        return;
+      }
+
+      currentRide = ride;
+
+      const users = loadUsers();
+      const allBookings = loadBookings().filter(b=>b.rideId===ride.id);
+      paidCount = allBookings.filter(b=>b.status==='paid').length;
+
+      const activeBookings = allBookings.filter(
+        b=>b.status==='joined' || b.status==='paid'
+      );
+      joinedPassengers = activeBookings.map(b=>{
+        const u = users.find(x=>x.id===b.passengerId);
+        return {
+          id: b.passengerId,
+          name: u ? u.name : 'راكب '+b.passengerId,
+          paid: b.status === 'paid'
+        };
+      });
+
+      isDriver = (currentUserId && ride.driverId===currentUserId && currentRole==='driver');
+
+      if(!isDriver){
+        const myBk = allBookings.find(b=>b.passengerId===currentUserId);
+        passengerPaid = !!myBk && myBk.status==='paid';
+      }
+
+      document.getElementById('rootShell').style.display='block';
+      document.getElementById('emptyState').style.display='none';
+
+      initMap();
+      renderBasics();
+      updateMapGraphics();
+    }
+    
+    function renderBasics(){
+      if(!currentRide) return;
+      const ride = currentRide;
+      const capacity = ride.seats + joinedPassengers.length;
+      const joined = joinedPassengers.length;
+
+      document.getElementById('rideTitle').textContent = 'الرحلة الحالية';
+      document.getElementById('rideSub').textContent =
+        escapeHtml(ride.from.name)+' → '+escapeHtml(ride.to.name);
+
+      document.getElementById('roleTag').textContent =
+        isDriver ? 'أنت في وضع السائق لهذه الرحلة' : 'أنت راكب في هذه الرحلة';
+
+      document.getElementById('routeText').textContent =
+        escapeHtml(ride.from.name)+' → '+escapeHtml(ride.to.name);
+
+      document.getElementById('timeText').textContent =
+        'وقت المغادرة المخطط: '+fmtTime(ride.departAt);
+
+      document.getElementById('driverText').textContent =
+        'السائق: '+escapeHtml(ride.driverName || 'غير معروف');
+
+      const statusLabel = document.getElementById('statusLabel');
+      const statusBadge = document.getElementById('statusBadge');
+
+      let statusText = 'في انتظار انضمام الركاب';
+      statusBadge.textContent = 'OPEN';
+      statusBadge.className = 'status-badge';
+
+      if(ride.status === 'pending_payment'){
+        statusText = 'بانتظار الدفع لانطلاق الرحلة';
+        statusBadge.textContent = 'PENDING PAYMENT';
+        statusBadge.className = 'status-badge status-pendingpayment';
+      }else if(ride.status === 'in_progress'){
+        statusText = 'الرحلة جارية الآن';
+        statusBadge.textContent = 'IN PROGRESS';
+        statusBadge.className = 'status-badge status-inprogress';
+      }else if(ride.status === 'completed'){
+        statusText = 'تمت الرحلة';
+        statusBadge.textContent = 'COMPLETED';
+        statusBadge.className = 'status-badge status-completed';
+      }
+      statusLabel.textContent = statusText;
+
+      document.getElementById('capacityText').textContent =
+        joined+' / '+capacity+' راكب';
+
+      const ul = document.getElementById('passengerList');
+      ul.innerHTML = '';
+      if(joinedPassengers.length){
+        joinedPassengers.forEach(p=>{
+          const li=document.createElement('li');
+          li.textContent = '• ' + p.name + ' - ' + (p.paid ? 'مدفوع' : 'غير مدفوع');
+          ul.appendChild(li);
+        });
+      }else{
+        const li=document.createElement('li');
+        li.textContent='لا يوجد ركاب بعد.';
+        ul.appendChild(li);
+      }
+
+      const fare = calcFare(ride, Math.max(joined,1));
+      const fareValue = document.getElementById('fareValue');
+      if(joined===0){
+        fareValue.textContent =
+          'المسافة التقريبية: ~'+fare.distanceKm.toFixed(1)+' كم. ستظهر الأجرة لكل راكب بعد انضمام أول راكب.';
+      }else{
+        fareValue.textContent =
+          'المسافة ~'+fare.distanceKm.toFixed(1)+' كم · الأجرة الكلية ≈ '+fare.total+
+          ' · نصيب كل راكب ≈ '+fare.perPassenger;
+      }
+      const fareHint = document.getElementById('fareHint');
+
+      if(isDriver){
+        if(ride.status === 'open'){
+          fareHint.textContent = 'المرحلة الحالية فقط لانضمام الركاب. يمكنك لاحقًا تفعيل حالة "بانتظار الدفع" قبل الانطلاق.';
+        }else if(ride.status === 'pending_payment'){
+          fareHint.textContent = 'الرحلة في حالة "بانتظار الدفع". الركاب يقدرون يدفعون الآن، وبعدها يمكنك بدء الرحلة في أي وقت.';
+        }else if(ride.status === 'in_progress'){
+          fareHint.textContent = 'الرحلة جارية. حالة الدفع لكل راكب تظهر في قائمة الركاب.';
+        }else{
+          fareHint.textContent = 'رحلة مكتملة – يمكن الرجوع لتفاصيلها من سجل الرحلات.';
+        }
+
+      }else{
+        if(ride.status === 'open'){
+          fareHint.textContent = 'لن يُطلب منك الدفع إلا بعد أن يفعّل السائق مرحلة "بانتظار الدفع".';
+        }else if(ride.status === 'pending_payment'){
+          fareHint.textContent = 'يمكنك الآن دفع الأجرة. بعد الدفع يستطيع السائق بدء الرحلة.';
+        }else if(ride.status === 'in_progress'){
+          fareHint.textContent = 'الرحلة جارية. إذا لم تُسجَّل دفعتك سابقًا فاسألي السائق مباشرة، الدفع من التطبيق يكون في مرحلة "بانتظار الدفع" فقط.';
+        }else{
+          fareHint.textContent = 'رحلة مكتملة – إذا كان عندك مشكلة يمكنك استخدام صفحة البلاغات.';
+        }
+      }
+
+      const driverBtns = document.getElementById('driverButtons');
+      const driverStats = document.getElementById('driverStats');
+      const passengerBtns = document.getElementById('passengerButtons');
+      const payBtn = document.getElementById('payBtn');
+      const payStatus = document.getElementById('payStatus');
+
+      if(isDriver){
+        driverBtns.style.display = 'flex';
+        driverStats.style.display = 'block';
+        passengerBtns.style.display = 'none';
+      }else{
+        driverBtns.style.display='none';
+        driverStats.style.display='block';
+        passengerBtns.style.display='flex';
+
+        // حالة الدفع الظاهرة للراكب
+        payStatus.textContent = 'حالة الدفع: ' + (passengerPaid ? 'مدفوع' : 'غير مدفوع');
+
+        // الدفع متاح فقط في حالة pending_payment
+        if(ride.status !== 'pending_payment'){
+          payBtn.disabled = true;
+          payBtn.textContent = 'الدفع متاح في مرحلة "بانتظار الدفع" فقط';
+        }else{
+          if(passengerPaid){
+            payBtn.disabled = true;
+            payBtn.textContent = 'تم دفع الأجرة';
+          }else{
+            payBtn.disabled = false;
+            payBtn.textContent = 'دفع الأجرة الآن';
+          }
+        }
+      }
+
+      const startBtn=document.getElementById('startBtn');
+      const finishBtn=document.getElementById('finishBtn');
+
+      if(isDriver){
+        if(ride.status==='open'){
+          startBtn.disabled=false;
+          startBtn.style.display='inline-block';
+          startBtn.textContent = 'تفعيل حالة "بانتظار الدفع"';
+          finishBtn.style.display='none';
+        }else if(ride.status==='pending_payment'){
+          startBtn.disabled=false;
+          startBtn.style.display='inline-block';
+          startBtn.textContent = 'بدء الرحلة الآن';
+          finishBtn.style.display='none';
+        }else if(ride.status==='in_progress'){
+          startBtn.style.display='none';
+          finishBtn.style.display='inline-block';
+        }else{
+          startBtn.style.display='none';
+          finishBtn.style.display='none';
+        }
+      }
+
+      const payText = document.getElementById('payAmountText');
+      if(payText){
+        if(joined===0){
+          payText.textContent = 'لا يوجد ركاب آخرون بعد. سيتم احتساب الأجرة كاملة عليك. الاختيار هنا محاكاة فقط.';// هذي حاطينها نختبر الوضع
+        }else{
+          payText.textContent = 'هذه مجرد محاكاة لطرق الدفع. عند اختيار أي طريقة سيتم اعتبار الأجرة مدفوعة لهذه الرحلة.';
+        }
+      }
+    }
+
+    // ===== الخريطة =====
+    function initMap(){
+      if(map) return;
+      map = L.map('map').setView([24.7136,46.6753], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom:18, attribution:'©️ OpenStreetMap'
+      }).addTo(map);
+    }
+
+    function updateMapGraphics(){
+      if(!map || !currentRide) return;
+      const f = currentRide.from;
+      const t = currentRide.to;
+      const fromLatLng = [f.lat, f.lng];
+      const toLatLng   = [t.lat, t.lng];
+
+      if(fromMarker) map.removeLayer(fromMarker);
+      if(toMarker)   map.removeLayer(toMarker);
+      if(pathLine)   map.removeLayer(pathLine);
+
+      fromMarker = L.marker(fromLatLng).addTo(map).bindPopup('نقطة الانطلاق');
+      toMarker   = L.marker(toLatLng).addTo(map).bindPopup('نقطة الوصول');
+
+      fetchRouteAndDraw(f,t);
+    }
+
+    function drawRouteOnMap(){
+      if(!map || !routePointsGlobal || routePointsGlobal.length < 2) return;
+
+      if(pathLine) map.removeLayer(pathLine);
+      pathLine = L.polyline(routePointsGlobal).addTo(map);
+
+      const bounds = L.latLngBounds(
+        routePointsGlobal.map(p => L.latLng(p[0], p[1]))
+      );
+      map.fitBounds(bounds, { padding:[30,30] });
+    }
+
+    // ===== أزرار السائق =====
+    function startRide(){
+      if(!isDriver || !currentRide) return;
+      const rides = loadRides();
+      const r = rides.find(x=>x.id===currentRide.id);
+      if(!r) return;
+
+      let statusText = null;
+
+      // من open → pending_payment (تفعيل الدفع)
+      if(r.status === 'open'){
+        r.status = 'pending_payment';
+        statusText = 'بانتظار الدفع لانطلاق الرحلة';
+      }
+      // من pending_payment → in_progress (بدء الرحلة)
+      else if(r.status === 'pending_payment'){
+        r.status = 'in_progress';
+        r.startedAt = new Date().toISOString();
+        statusText = 'الرحلة جارية الآن';
+      }else{
+        return;
+      }
+
+      localStorage.setItem('rs_rides', JSON.stringify(rides));
+      currentRide = r;
+      renderBasics();
+      drawRouteOnMap();
+
+      //  إشعار حالة الرحلة للجميع
+      if (statusText) {
+        notifyRideStatusChange(statusText);
+      }
+    }
+    
+    function finishRide(){
+      if(!isDriver || !currentRide) return;
+      if(currentRide.status!=='in_progress') return;
+
+      const rides = loadRides();
+      const r = rides.find(x=>x.id===currentRide.id);
+      if(!r) return;
+
+      r.status='completed';
+      r.finishedAt = new Date().toISOString();
+      localStorage.setItem('rs_rides', JSON.stringify(rides));
+      currentRide = r;
+      //  إشعار أن الرحلة اكتملت
+      if (window.rsAddNotificationMany && currentRide) {
+        const rideLabel = currentRide.from.name + ' → ' + currentRide.to.name;
+        const ids = [currentRide.driverId].concat(joinedPassengers.map(p => p.id));
+        const msg = 'تم إنهاء الرحلة من ' + rideLabel + '. نشكركم على استخدام الخدمة.';
+        window.rsAddNotificationMany(ids, msg, 'status', currentRide.id);
+      }
+
+      // ما عاد فيه رحلة حالية لهذا الحساب
+      localStorage.setItem('rs_current_ride_id','');
+      localStorage.setItem('rs_current_ride_role','');
+
+      alert('تم إنهاء الرحلة. يمكنك مراجعة تفاصيلها من صفحة سجل الرحلات.');
+      location.href = 'rideHistory.html';
+    }
+
+    // ===== دفع الراكب (محاكاة مع طرق دفع) =====
+    function payFare(){
+      if(isDriver || !currentRide || !currentUserId) return;
+
+      // الدفع فقط في حالة "بانتظار الدفع"
+      if(currentRide.status !== 'pending_payment'){
+        alert('الدفع متاح فقط في مرحلة "بانتظار الدفع".');
+        return;
+      }
+
+      const bookings = loadBookings();
+      const b = bookings.find(
+        x=>x.rideId===currentRide.id && x.passengerId===currentUserId
+      );
+      if(!b){
+        alert('لم يتم العثور على حجزك لهذه الرحلة.');
+        return;
+      }
+      if(b.status==='paid'){
+        alert('سبق تسجيل الدفع لهذه الرحلة.');
+        passengerPaid = true;
+        renderBasics();
+        return;
+      }
+
+      pendingBookingId = b.id;
+      showPaymentModal();
+    }
+
+    function showPaymentModal(){
+      const ov = document.getElementById('payOverlay');
+      if(ov) ov.classList.add('show');
+    }
+    function hidePaymentModal(){
+      const ov = document.getElementById('payOverlay');
+      if(ov) ov.classList.remove('show');
+    }
+
+    function confirmPayment(method){
+  if(!pendingBookingId || !currentRide || !currentUserId){
+    console.warn('confirmPayment: missing data', { pendingBookingId, currentRide, currentUserId });
+    hidePaymentModal();
+    return;
+  }
+
+  const bookings = loadBookings();
+  const b = bookings.find(x=>x.id===pendingBookingId);
+  if(!b){
+    console.warn('confirmPayment: booking not found for id', pendingBookingId);
+    hidePaymentModal();
+    return;
+  }
+  if(b.status === 'paid'){
+    hidePaymentModal();
+    passengerPaid = true;
+    renderBasics();
+    return;
+  }
+
+  //  نحدّث حالة الحجز إلى "paid" ونحفظ
+  b.status = 'paid';
+  localStorage.setItem('rs_bookings', JSON.stringify(bookings));
+  passengerPaid = true;
+  paidCount += 1;
+
+  //  إشعار للسائق + هذا الراكب باسم الراكب
+  try {
+    const users = loadUsers();
+    const passengerUser = users.find(u => u.id === currentUserId);
+    const passengerName = passengerUser ? passengerUser.name : 'أحد الركاب';
+    const rideLabel = currentRide.from.name + ' → ' + currentRide.to.name;
+
+    console.log('confirmPayment: will notify', {
+      passengerName,
+      driverId: currentRide.driverId,
+      passengerId: currentUserId
+    });
+
+    if (window.rsAddNotificationMany) {
+      const ids = [currentRide.driverId, currentUserId]; // السائق + هذا الراكب
+      const msg = passengerName + ' قام بدفع الأجرة لرحلتكم من ' + rideLabel + '.';
+      window.rsAddNotificationMany(ids, msg, 'payment', currentRide.id);
+    } else {
+      console.warn('confirmPayment: rsAddNotificationMany not found on window');
+    }
+  } catch (e) {
+    console.error('payment notification error', e);
+  }
+
+  hidePaymentModal();
+  alert('تم تسجيل دفع الأجرة بنجاح (محاكاة) عن طريق: '+method+'.');
+  renderBasics();
+}
+
+    // ===== زر الطوارئ =====
+    function showEmergency(){
+      alert(
+        'أرقام الطوارئ في المملكة:\n' +
+        'الشرطة: 999\n' +
+        'الإسعاف: 997\n' +
+        'المرور: 993\n\n' +
+        'في الحالات الحرجة اتصل/ي مباشرة على الأرقام أعلاه.'
+      );
+    }
+
+    // ===== مشاركة الرحلة =====
+    function shareRide(){
+      if(!currentRide) return;
+      const url = location.href;
+      const joined = joinedPassengers.length;
+      const capacity = joined + currentRide.seats;
+      const text =
+        'رحلتي من '+currentRide.from.name+' إلى '+currentRide.to.name+
+        ' في '+fmtTime(currentRide.departAt)+
+        ' ('+joined+' / '+capacity+' ركاب). رابط المتابعة: '+url;
+
+      if(navigator.share){
+        navigator.share({title:'مشاركة الرحلة الحالية',text, url}).catch(()=>{});
+      }else{
+        if(navigator.clipboard){
+          navigator.clipboard.writeText(text).then(()=>{
+            alert('تم نسخ تفاصيل الرحلة إلى الحافظة، يمكنك لصقها في الواتساب أو أي تطبيق آخر.');
+          },()=>{
+            alert('تعذر النسخ تلقائيًا، يمكنك نسخ النص من شاشة الرحلة.');
+          });
+        }else{
+          alert(text);
+        }
+      }
+    }
+
+    // ===== الإبلاغ =====
+    function goReport(){
+      if(currentRide){
+        localStorage.setItem('rs_report_ride_id', currentRide.id);
+      }
+      location.href = 'reports.html';
+    }
+
+    window.addEventListener('load', init);
+
+    // ===== المحادثة =====
+    function goChat(){
+      if(currentRide){
+        localStorage.setItem('rs_current_ride_id', currentRide.id);
+      }
+      location.href = 'appChat.html';
+    }
+
+    function goHome(){
+      const role = localStorage.getItem('rs_current_role') || '';
+      if(role === 'driver'){
+        location.href = 'driverHome.html';
+      }else if(role === 'passenger'){
+        location.href = 'passengerHome.html';
+      }else{
+        location.href = 'index.html';
+      }
+    }
+  </script>
+</body>
+</html>

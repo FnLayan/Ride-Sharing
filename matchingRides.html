@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>مطابقة الرحلات</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{--bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;--accent:#cbb796;--accent-hover:#b29a75;--text:#3b2f24;--muted:#7a6a57;}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:var(--bg);font-family:'Tajawal',sans-serif;color:var(--text)}
+    .wrap{max-width:950px;margin:24px auto;padding:16px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 26px rgba(0,0,0,.08);padding:16px}
+    h1{margin:0 0 10px;font-size:22px;color:var(--muted);text-align:center}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+    .col{flex:1;min-width:220px}
+    label{display:block;font-size:13px;color:var(--muted);margin:6px 0 4px}
+    input{width:100%;padding:10px;border:1px solid #e6dcca;border-radius:8px;background:#fff;font-size:14px}
+    .btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 14px;cursor:pointer;font-weight:700}
+    .btn:hover{background:var(--accent-hover)}
+    .toggle{display:inline-flex;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+    .toggle button{background:#fff;border:0;padding:8px 14px;cursor:pointer;font-size:13px}
+    .toggle button.active{background:var(--accent);color:#fff}
+    .muted{color:#7a6a57;font-size:13px}
+    .map{height:320px;background:#fffdf9;border:1px solid #e0d6c8;border-radius:12px;margin-top:8px}
+    .results{margin-top:14px}
+    .ride{border:1px solid #efe6db;border-radius:10px;padding:12px;margin-bottom:10px;background:#fff}
+    .ride h3{margin:0 0 6px;font-size:16px}
+    .badge{display:inline-block;background:#eee;border:1px solid #e1d6c7;border-radius:999px;padding:3px 8px;font-size:12px;margin-inline-start:6px}
+    .sep{height:1px;background:#f0e8de;margin:10px 0}
+    .empty{padding:12px;border:1px dashed #decfbf;border-radius:10px;background:#fff;text-align:center;color:#7a6a57}
+    .error-msg{margin-top:10px;padding:8px 10px;border-radius:8px;background:#ffe2e0;color:#802b24;font-size:13px;border:1px solid #f5b3ad;}
+  </style>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>مطابقة الرحلات</h1>
+
+      <p class="muted" style="text-align:center;margin:0 0 8px">
+        اختاري أولاً نقطة الانطلاق، ثم نقطة الوصول من الخريطة. النظام يطابق الرحلات التي
+        يبدأ مسارها داخل دائرة الانطلاق وينتهي داخل دائرة الوصول (مع إمكانية تقييد الوقت).
+      </p>
+
+      <div class="row">
+        <div class="col">
+          <label>الوقت المرغوب للمغادرة (اختياري)</label>
+          <input id="when" type="datetime-local">
+        </div>
+        <div class="col">
+          <label>نافذة زمنية (± دقيقة)</label>
+          <input id="timeWindow" type="number" min="0" step="5" value="30">
+        </div>
+        <div class="col">
+          <label>نصف قطر دائرة الانطلاق (كم)</label>
+          <input id="startRadiusKm" type="number" min="1" step="1" value="3">
+        </div>
+        <div class="col">
+          <label>نصف قطر دائرة الوصول (كم)</label>
+          <input id="endRadiusKm" type="number" min="1" step="1" value="3">
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <div class="col" style="flex:0 0 auto">
+          <div class="toggle">
+            <button id="btnFrom" class="active" onclick="setSelectMode('from')">تحديد الانطلاق</button>
+            <button id="btnTo" onclick="setSelectMode('to')">تحديد الوصول</button>
+          </div>
+        </div>
+        <div class="col" style="flex:0 0 auto">
+          <button class="btn" onclick="runSearch()">تحديث المطابقة</button>
+        </div>
+      </div>
+
+      <div class="muted" style="margin-top:4px;font-size:12px">
+        اضغطي على الخريطة لاختيار النقاط. النقر أثناء تفعيل "تحديد الانطلاق" يضع نقطة البداية،
+        وأثناء "تحديد الوصول" يضع نقطة النهاية.
+      </div>
+
+      <div id="map" class="map"></div>
+      <!-- خطأ الوقت -->
+      <div id="timeError" class="error-msg" style="display:none"></div>
+      <!-- هنا مكان رسالة الخطأ حقت الانضمام -->
+      <div id="joinError" class="error-msg" style="display:none"></div>
+
+      <div id="results" class="results"></div>
+
+      <div style="margin-top:12px; text-align:center;">
+        <button class="btn btn-ghost" type="button" onclick="goExplore()">
+           رجوع لصفحة استكشاف الرحلات
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="notifications-bar.js"></script>
+  <script>
+    // ===== util =====
+    function haversineKm(a,b){
+      if(!a||!b||a.lat==null||a.lng==null||b.lat==null||b.lng==null) return Infinity;
+      const toRad = d=>d*Math.PI/180;
+      const R=6371, dLat=toRad(b.lat-a.lat), dLng=toRad(b.lng-a.lng);
+      const s = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(Math.min(1,dLng/2)**2);
+      return 2*R*Math.asin(Math.sqrt(
+        Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2
+      ));
+    }
+    const fmtTime = iso => new Date(iso).toLocaleString();
+    const diffMin = (a,b)=> Math.round(Math.abs(new Date(a)-new Date(b))/60000);
+
+    function loadRides(){
+      const raw = localStorage.getItem('rs_rides');
+      let arr = [];
+      if(raw){ try{ arr = JSON.parse(raw)||[]; }catch(e){} }
+      if(!arr.length){
+        arr = [
+          {id:'r1',driverId:'uD1',driverName:'سائق تجريبي 1',
+            from:{lat:24.7136,lng:46.6753,name:'Olaya Exit 8'},
+            to:{lat:24.7240,lng:46.6210,name:'Imam Univ - Gate 3'},
+            departAt:new Date(Date.now()+60*60*1000).toISOString(),seats:3,notes:'Morning ride'},
+          {id:'r2',driverId:'uD2',driverName:'سائق تجريبي 2',
+            from:{lat:24.7100,lng:46.6800,name:'King Fahd Rd'},
+            to:{lat:24.7240,lng:46.6210,name:'Imam Univ - Gate 1'},
+            departAt:new Date(Date.now()+90*60*1000).toISOString(),seats:1,notes:'Fast lane'},
+          {id:'r3',driverId:'uD3',driverName:'سائق تجريبي 3',
+            from:{lat:24.6800,lng:46.7200,name:'Al Yasmin'},
+            to:{lat:24.7240,lng:46.6210,name:'Imam Univ - Gate 2'},
+            departAt:new Date(Date.now()+45*60*1000).toISOString(),seats:2,notes:'Female only'}
+        ];
+        localStorage.setItem('rs_rides', JSON.stringify(arr));
+      }
+      return arr;
+    }
+
+    let selectMode = 'from';
+    let userFrom = null;
+    let userTo   = null;
+
+    let map, markersLayer, fromMarker, fromCircle, toMarker, toCircle;
+
+    function setSelectMode(m){
+      selectMode = m;
+      document.getElementById('btnFrom').classList.toggle('active', m==='from');
+      document.getElementById('btnTo').classList.toggle('active', m==='to');
+    }
+
+    function ensureMap(){
+      if(map) return;
+      map = L.map('map').setView([24.7136,46.6753], 11);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '©️ OpenStreetMap'
+      }).addTo(map);
+
+      map.on('click', e=>{
+        if(selectMode === 'from'){
+          userFrom = {lat:e.latlng.lat, lng:e.latlng.lng};
+        }else{
+          userTo = {lat:e.latlng.lat, lng:e.latlng.lng};
+        }
+        runSearch();
+      });
+    }
+
+    function showTimeError(msg){
+      const box = document.getElementById('timeError');
+      if(box){
+        box.textContent = msg;
+        box.style.display = 'block';
+        box.scrollIntoView({behavior:'smooth', block:'center'});
+      }else{
+        alert(msg);
+      }
+    }
+
+    function hideTimeError(){
+      const box = document.getElementById('timeError');
+      if(box){
+        box.textContent = '';
+        box.style.display = 'none';
+      }
+    }
+
+    function runSearch(){
+      ensureMap();
+
+      const startRadiusKm = parseFloat(document.getElementById('startRadiusKm').value)||3;
+      const endRadiusKm   = parseFloat(document.getElementById('endRadiusKm').value)||3;
+      const timeWindow    = parseInt(document.getElementById('timeWindow').value||'30',10);
+  
+      const whenInput = document.getElementById('when');
+      let whenISO = null;
+
+      // تحقق من الوقت: لازم يكون مستقبلي إذا المستخدم اختار قيمه
+      if (whenInput && whenInput.value){
+        const selected = new Date(whenInput.value);
+        const now = new Date();
+        if (selected <= now){
+          showTimeError('الوقت المرغوب للمغادرة يجب أن يكون في المستقبل، لا يمكن اختيار وقت حالي أو سابق.');
+          // نوقف البحث على طول
+          return;
+        }else{
+          hideTimeError();
+          whenISO = selected.toISOString();
+        }
+      }else{
+        hideTimeError();
+      }
+
+      if(!userFrom || !userTo){
+        renderResults(null);
+        if(map){
+          renderMap([], startRadiusKm, endRadiusKm);
+        }
+        return;
+      }
+
+      const now = new Date();
+      const rides = loadRides().filter(r=>{
+        const st = r.status || 'open';
+        if(st !== 'open') return false;// فقط "لم تبدأ" هي اللي تظهر فالرينج
+        if(!r.departAt) return false;
+        if (typeof r.seats !== 'number' || r.seats <= 0) return false; //  إخفاء الرحلات المكتملة
+        return new Date(r.departAt) > now;// الوقت مستقبلي
+      });
+      let items = rides.map(r=>{
+        const dStart = haversineKm(userFrom, r.from);
+        const dEnd   = haversineKm(userTo,   r.to);
+        const tDiff  = whenISO ? diffMin(r.departAt, whenISO) : null;
+        return {...r,_dStart:dStart,_dEnd:dEnd,_tDiff:tDiff};
+      }).filter(r=>{
+        let ok = true;
+        ok = ok && r._dStart!=null && isFinite(r._dStart) && r._dStart <= startRadiusKm;
+        ok = ok && r._dEnd  !=null && isFinite(r._dEnd)   && r._dEnd   <= endRadiusKm;
+        if(whenISO){
+          ok = ok && r._tDiff!=null && r._tDiff <= timeWindow;
+        }
+        return ok;
+      }).sort((a,b)=> new Date(a.departAt)-new Date(b.departAt));
+
+      renderResults(items);
+      renderMap(items, startRadiusKm, endRadiusKm);
+    }
+
+    function renderResults(items){
+      const box = document.getElementById('results');
+
+      if(!userFrom || !userTo){
+        box.innerHTML =
+          '<div class="empty">لا يتم عرض أي رحلات إلا بعد تحديد كل من نقطة الانطلاق ونقطة الوصول من الخريطة.</div>';
+        return;
+      }
+
+      if(!items || !items.length){
+        box.innerHTML = '<div class="empty">لا توجد رحلات تطابق النطاقات الحالية.</div>';
+        return;
+      }
+
+      let html = '';
+      items.forEach(r=>{
+        const dS = (r._dStart!=null && isFinite(r._dStart)) ? r._dStart.toFixed(1)+' كم عن نقطة الانطلاق' : 'بدون نطاق انطلاق';
+        const dE = (r._dEnd!=null && isFinite(r._dEnd)) ? r._dEnd.toFixed(1)+' كم عن نقطة الوصول'   : 'بدون نطاق وصول';
+        const t  = (r._tDiff!=null) ? ('فرق الوقت ≈ '+r._tDiff+' دقيقة') : 'بدون قيد وقت';
+
+        html += `
+          <div class="ride">
+            <h3>${escapeHtml(r.from?.name||'نقطة انطلاق ؟')} → ${escapeHtml(r.to?.name||'وجهة ؟')}</h3>
+            <div class="muted">السائق: ${escapeHtml(r.driverName || 'غير معروف')}</div>
+            <div class="muted">المغادرة: ${fmtTime(r.departAt)} · المقاعد المتاحة: ${r.seats}</div>
+            <div class="muted" style="margin-top:4px">${dS} · ${dE} · ${t}</div>
+            <div class="sep"></div>
+            <div class="row" style="justify-content:space-between;align-items:center;gap:8px">
+              <span class="muted">${escapeHtml(r.notes||'')}</span>
+              <button class="btn" onclick="requestJoin('${r.id}')">الانضمام إلى الرحلة</button>
+            </div>
+          </div>
+        `;
+      });
+      box.innerHTML = html;
+    }
+
+    function renderMap(items, startRadiusKm, endRadiusKm){
+      if(!markersLayer){
+        markersLayer = L.layerGroup().addTo(map);
+      }
+      markersLayer.clearLayers();
+      const bounds = [];
+
+      if(userFrom){
+        const c=[userFrom.lat,userFrom.lng];
+        const rMeter=(startRadiusKm||1)*1000;
+        fromMarker = L.marker(c).addTo(markersLayer).bindPopup('نقطة الانطلاق');
+        fromCircle = L.circle(c,{radius:rMeter,color:'#cbb796',fillColor:'#cbb796',fillOpacity:0.12}).addTo(markersLayer);
+        bounds.push(c);
+      }
+      if(userTo){
+        const c=[userTo.lat,userTo.lng];
+        const rMeter=(endRadiusKm||1)*1000;
+        toMarker = L.marker(c).addTo(markersLayer).bindPopup('نقطة الوصول');
+        toCircle = L.circle(c,{radius:rMeter,color:'#7a6a57',fillColor:'#7a6a57',fillOpacity:0.12}).addTo(markersLayer);
+        bounds.push(c);
+      }
+
+      (items||[]).forEach(r=>{
+        if(r.from && typeof r.from.lat==='number' && typeof r.from.lng==='number'){
+          const p=[r.from.lat,r.from.lng];
+          bounds.push(p);
+          L.marker(p).addTo(markersLayer)
+            .bindPopup(`${escapeHtml(r.from.name||'')} → ${escapeHtml(r.to?.name||'')}`);
+        }
+      });
+
+      if(bounds.length){
+        map.fitBounds(bounds,{padding:[30,30]});
+      }
+    }
+
+    function loadBookings(){
+      try{return JSON.parse(localStorage.getItem('rs_bookings')||'[]');}
+      catch(e){return[];}
+    }
+
+    // التحقق هل للراكب رحلة نشطه او لا
+    function hasActivePassengerRide(userId){
+      const rides = loadRides();
+      const bookings = loadBookings().filter(
+        b => b.passengerId === userId && (b.status === 'joined' || b.status === 'paid')
+      );
+
+      return bookings.some(b=>{
+        const r = rides.find(x=>x.id === b.rideId);
+        if(!r) return false;
+        const st = r.status || 'open';
+        return st === 'open' || st === 'pending_payment' || st === 'in_progress';
+      });
+    }
+
+    function showJoinError(msg){
+      const box = document.getElementById('joinError');
+      if(box){
+        box.textContent = msg;
+        box.style.display = 'block';
+        box.scrollIntoView({behavior:'smooth', block:'center'});
+      }else{
+        alert(msg);
+      }
+    }
+    
+    function requestJoin(rideId){
+      const userId = localStorage.getItem('rs_current_user_id') || '';
+      const role   = localStorage.getItem('rs_current_role') || '';
+
+      if(!userId || role !== 'passenger'){
+        alert('يجب تسجيل دخولك كراكب للانضمام إلى رحلة.');
+        return;
+      }
+
+      if (hasActivePassengerRide(userId)) {
+        showJoinError('لا يمكنك الانضمام إلى رحلة جديدة لأن لديك رحلة نشطة بالفعل (لم تبدأ / بانتظار الدفع / جارية). أنهِ رحلتك الحالية أولاً من "الرحلة الحالية" ثم حاول/ي مرة أخرى.');
+        return;  // ما نسوي حجز ما ننقص مقعد ما نغير في current_ride_id
+      }
+      const users = JSON.parse(localStorage.getItem('rs_users') || '[]');
+      const me = users.find(u => u.id === userId);
+      if(!me){
+        alert('تعذر العثور على حسابك.');
+        return;
+      }
+
+      const rides = loadRides();
+      const ride = rides.find(r => r.id === rideId);
+      if(!ride){
+        alert('تعذر العثور على هذه الرحلة.');
+        return;
+      }
+      if(ride.seats <= 0){
+        alert('هذه الرحلة ممتلئة.');
+        return;
+      }
+
+      ride.seats -= 1;
+      localStorage.setItem('rs_rides', JSON.stringify(rides));
+
+      let bookings = [];
+      try{
+        bookings = JSON.parse(localStorage.getItem('rs_bookings') || '[]');
+      }catch(e){ bookings = []; }
+
+      const bookingId = 'bk-' + Date.now();
+      bookings.push({
+        id: bookingId,
+        rideId: ride.id,
+        passengerId: userId,
+        createdAt: new Date().toISOString(),
+        status: 'joined'
+      });
+      localStorage.setItem('rs_bookings', JSON.stringify(bookings));
+
+      localStorage.setItem('rs_current_ride_id', ride.id);
+      localStorage.setItem('rs_current_ride_role', 'passenger');
+
+      alert('تم الانضمام إلى الرحلة، سيتم نقلك لواجهة الرحلة الحالية.');
+      location.href = 'currentRide.html';
+    }
+
+    function escapeHtml(s){
+      return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    }
+
+    (function init(){
+      ensureMap();
+      document.getElementById('results').innerHTML =
+        '<div class="empty">فعّلي "تحديد الانطلاق" وحددي نقطة البداية، ثم "تحديد الوصول" وحددي نقطة النهاية. بعد تحديد النقطتين ستظهر الرحلات المطابقة ويمكنك الانضمام مباشرة.</div>';
+
+      const whenInput = document.getElementById('when');
+      if (whenInput){
+        whenInput.addEventListener('change', function(){
+          if(!this.value){
+            hideTimeError();
+            return;
+          }
+          const selected = new Date(this.value);
+          const now = new Date();
+          if (selected <= now){
+            showTimeError('الوقت المرغوب للمغادرة يجب أن يكون في المستقبل، لا يمكن اختيار وقت حالي أو سابق.');
+          }else{
+            hideTimeError();
+          }
+        });
+      }
+    })();
+    
+    function goExplore(){
+      location.href = 'exploreRides.html';
+    }
+  </script>
+</body>
+</html>

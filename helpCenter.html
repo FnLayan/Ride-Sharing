@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>مركز المساعدة</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{
+      --bg:#f8f3ee;
+      --card:#fffdf9;
+      --border:#ddd0c8;
+      --accent:#cbb796;
+      --accent-hover:#b29a75;
+      --text:#3b2f24;
+      --muted:#7a6a57;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:var(--bg);
+      font-family:'Tajawal',sans-serif;
+      color:var(--text);
+    }
+    .container{
+      width:min(800px,96vw);
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:18px 18px 14px;
+      box-shadow:0 8px 26px rgba(0,0,0,.08);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .header{
+      text-align:center;
+      margin-bottom:4px;
+    }
+    .header h1{
+      margin:0;
+      font-size:20px;
+      color:var(--muted);
+    }
+    .header .sub{
+      margin-top:4px;
+      font-size:13px;
+      color:#9a8b7a;
+    }
+
+    /* نافذة الدردشة */
+    #chatWindow{
+      flex:1;
+      min-height:260px;
+      max-height:440px;
+      overflow-y:auto;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:#f6efe5;
+      padding:10px;
+    }
+    .msg{
+      max-width:82%;
+      margin:6px 0;
+      padding:8px 10px 6px;
+      border-radius:12px;
+      font-size:14px;
+      line-height:1.7;
+      position:relative;
+      word-wrap:break-word;
+      white-space:pre-line;
+    }
+    .msg.bot{
+      background:#ffffff;
+      border:1px solid #e1d6c5;
+      margin-right:auto;
+    }
+    .msg.user{
+      background:#cbb796;
+      color:#ffffff;
+      margin-left:auto;
+      border-bottom-left-radius:2px;
+    }
+    .time{
+      display:block;
+      font-size:11px;
+      color:#8d7d6d;
+      margin-top:4px;
+      text-align:left;
+    }
+    .msg.user .time{ color:#f5ece0; }
+
+    .inputRow{
+      display:flex;
+      gap:8px;
+      margin-top:6px;
+    }
+    #userInput{
+      flex:1;
+      padding:9px 10px;
+      border-radius:10px;
+      border:1px solid #e0d6c8;
+      font-size:14px;
+      background:#fff;
+    }
+    .sendBtn{
+      background:var(--accent);
+      color:#fff;
+      border:none;
+      border-radius:10px;
+      padding:0 18px;
+      font-size:14px;
+      font-weight:700;
+      cursor:pointer;
+      transition:.2s;
+    }
+    .sendBtn:hover{ background:var(--accent-hover); }
+
+    .hint{
+      font-size:12px;
+      color:#9a8b7a;
+      margin-top:2px;
+      text-align:center;
+    }
+
+    .optBtn{
+      background:#dcd2c4;
+      color:#3b2f24;
+      border:none;
+      padding:6px 12px;
+      border-radius:10px;
+      margin:4px 2px;
+      cursor:pointer;
+      font-size:13px;
+    }
+    .optBtn:hover{
+      background:#cbb796;
+      color:#fff;
+    }
+
+    @media (max-width:600px){
+      .msg{max-width:100%;}
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>مركز المساعدة</h1>
+    <div class="sub">اسأل سؤالك أو اختر من الاقتراحات الجاهزة 👇</div>
+  </div>
+
+  <div id="chatWindow"></div>
+
+  <div class="inputRow">
+    <input id="userInput" type="text" placeholder="اكتب سؤالك هنا..." />
+    <button class="sendBtn" onclick="sendMsg()">إرسال</button>
+  </div>
+  <div class="hint">يمكنك أيضًا الضغط على أحد الخيارات المقترحة في بداية المحادثة.</div>
+</div>
+
+<script src="notifications-bar.js"></script>
+<script>
+  function timeNow(){
+    const d = new Date();
+    const h = String(d.getHours()).padStart(2,'0');
+    const m = String(d.getMinutes()).padStart(2,'0');
+    return h + ':' + m;
+  }
+
+  function addUserMessage(txt){
+    if(!txt) return;
+    const chat = document.getElementById('chatWindow');
+    const div = document.createElement('div');
+    div.className = 'msg user';
+    div.innerHTML = `${escapeHtml(txt)}<span class="time">${timeNow()}</span>`;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function addBotMessage(txt){
+    const chat = document.getElementById('chatWindow');
+    const div = document.createElement('div');
+    div.className = 'msg bot';
+    div.innerHTML = `${txt}<span class="time">${timeNow()}</span>`;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  // رسالة البداية مع كم اقتراح
+  function addQuickOptions(){
+    const chat = document.getElementById('chatWindow');
+    const wrapper = document.createElement('div');
+    wrapper.className = 'msg bot';
+    wrapper.innerHTML = `
+      أهلاً بك 👋! كيف يمكنني مساعدتك؟ اختر أحد الخيارات التالية:
+      <br><br>
+      <button class="optBtn" onclick="quickSelect('مشاكل تسجيل الدخول')">مشاكل تسجيل الدخول</button>
+      <button class="optBtn" onclick="quickSelect('إدارة الرحلات')">إدارة الرحلات</button>
+      <button class="optBtn" onclick="quickSelect('التقييمات والبلاغات')">التقييمات والبلاغات</button>
+      <button class="optBtn" onclick="quickSelect('الدردشات الجماعية')">الدردشات الجماعية</button>
+      <button class="optBtn" onclick="quickSelect('التقويم الجامعي')">التقويم الجامعي</button>
+      <br><br>أو اكتب سؤالك بنفسك ✏️
+      <span class="time">${timeNow()}</span>
+    `;
+    chat.appendChild(wrapper);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function quickSelect(topic){
+    addUserMessage(topic);
+    const reply = getAutoReply(topic);
+    setTimeout(()=>addBotMessage(reply), 300);
+  }
+
+  function sendMsg(){
+    const input = document.getElementById('userInput');
+    const text = (input.value || '').trim();
+    if(!text) return;
+    addUserMessage(text);
+    input.value = '';
+    const reply = getAutoReply(text);
+    setTimeout(()=>addBotMessage(reply), 300);
+  }
+
+  // ردود بسيطة حسب الكلمه المفتاحية
+  function getAutoReply(text){
+    const t = text.toLowerCase();
+
+    if(t.includes('دخول') || t.includes('login')){
+      return 'بالنسبة لمشاكل تسجيل الدخول:\n• تأكّد من كتابة البريد الجامعي بالشكل الصحيح.\n• تأكّد أن لديك حساب مسجّل على النظام.\n• إذا نسيت كلمة المرور، استخدم صفحة "نسيت كلمة المرور".';
+    }
+
+    if(t.includes('رحلة') || t.includes('رحلات') || t.includes('مشوار')){
+      return 'لإدارة الرحلات:\n• السائق يمكنه إنشاء/جدولة رحلة من الصفحة الرئيسية (السائق).\n• الراكب يمكنه استكشاف الرحلات المتاحة من "استكشاف الرحلات".\n• تأكّد من اختيار نقطة الانطلاق والوجهة والوقت بدقة.';
+    }
+
+    if(t.includes('تقييم') || t.includes('بلاغ') || t.includes('شكوى')){
+      return 'بخصوص التقييمات والبلاغات:\n• يمكنك تقييم الرحلة بعد الانتهاء منها من صفحة سجل الرحلات.\n• في حال وجود مشكلة، استخدم صفحة "بلاغاتي" لرفع بلاغ للمسؤول.\n• اذكر وقت الرحلة واسم السائق/الراكب لتسهيل المتابعة.';
+    }
+
+    if(t.includes('دردشة') || t.includes('القروبات') || t.includes('جماعية')){
+      return 'عن الدردشات الجماعية:\n• يمكنك الدخول إلى الدردشات الجماعية من زر "الدردشات الجماعية" في الصفحة الرئيسية.\n• يمكن إنشاء مجموعات خاصة لزملاء المادة أو التخصص.\n• احرص على الالتزام بسياسة الاستخدام واحترام الآخرين.';
+    }
+
+    if(t.includes('تقويم') || t.includes('الجامعي')){
+      return 'حول التقويم الجامعي:\n• السائق يستطيع تصفح الأحداث الجامعية القادمة من صفحة التقويم الجامعي.\n• المسؤول يمكنه إضافة/تعديل/حذف الأحداث من نفس الصفحة.\n• يتم استخدام هذه الأحداث للتنبؤ بأوقات الضغط على الرحلات (أيام الاختبارات، الفعاليات، إلخ).';
+    }
+
+    return 'شكرًا لتواصلك 🙏.\nيبدو أن سؤالك يحتاج دعم متخصص ❤️\nتم تسجيل استفسارك وسيتم مراجعته من فريق الدعم في أقرب وقت.\n🌟 يمكنك أيضًا اختيار أحد المواضيع المقترحة بالأعلى للحصول على إجابة أسرع.';
+}
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"]/g, c=>({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'
+    }[c]));
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    addQuickOptions();
+    document.getElementById('userInput').addEventListener('keydown', e=>{
+      if(e.key === 'Enter'){ e.preventDefault(); sendMsg(); }
+    });
+  });
+</script>
+
+</body>
+</html>

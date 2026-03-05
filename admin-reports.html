@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>إدارة البلاغات (الأدمن)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{
+      --bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;
+      --accent:#cbb796;--accent-hover:#b29a75;
+      --text:#3b2f24;--muted:#7a6a57;--danger:#d87a6b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;
+      display:flex;align-items:flex-start;justify-content:center;
+      background:var(--bg);font-family:'Tajawal',sans-serif;color:var(--text)
+    }
+    .shell{
+      width:min(1000px,96vw);
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      margin:20px auto;
+      box-shadow:0 8px 26px rgba(0,0,0,.08);
+      overflow:hidden;
+    }
+    .header{
+      padding:14px 18px;
+      background:var(--accent);
+      color:#fff;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+    }
+    .header h1{margin:0;font-size:20px;}
+    .header-sub{font-size:13px;opacity:.9}
+    .content{padding:16px;}
+    .filters{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-bottom:12px;
+      align-items:center;
+    }
+    label{
+      font-size:13px;
+      color:var(--muted);
+      margin-inline-start:4px;
+    }
+    select{
+      padding:6px 8px;
+      border-radius:8px;
+      border:1px solid var(--border);
+      font-family:'Tajawal',sans-serif;
+      font-size:13px;
+    }
+    .reports-list{
+      margin-top:6px;
+    }
+    .card{
+      border:1px solid #efe6db;
+      border-radius:10px;
+      padding:10px 12px;
+      margin-bottom:10px;
+      background:#fff;
+    }
+    .title-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:8px;
+      margin-bottom:4px;
+    }
+    .report-title{
+      font-size:14px;
+      font-weight:700;
+    }
+    .badge{
+      display:inline-block;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid #ddd0c8;
+      background:#eee;
+      margin-inline-start:4px;
+    }
+    .badge-open{background:#ffe9d6;border-color:#f0b784;}
+    .badge-review{background:#d6ebff;border-color:#88aedd;}
+    .badge-closed{background:#e0e0e0;border-color:#b0b0b0;}
+    .meta{font-size:12px;color:var(--muted);margin-bottom:3px;}
+    .details{font-size:13px;margin-top:4px;}
+    .actions{
+      margin-top:8px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      align-items:center;
+    }
+    .btn{
+      background:var(--accent);
+      color:#fff;
+      border:none;
+      border-radius:8px;
+      padding:6px 10px;
+      font-size:12px;
+      cursor:pointer;
+    }
+    .btn:hover{background:var(--accent-hover);}
+    .btn-light{
+      background:#fff;
+      color:var(--accent);
+      border:1px solid var(--accent);
+    }
+    .btn-danger{
+      background:var(--danger);
+    }
+    textarea{
+      width:100%;
+      margin-top:4px;
+      border-radius:8px;
+      border:1px solid var(--border);
+      font-family:'Tajawal',sans-serif;
+      font-size:12px;
+      padding:6px 8px;
+      resize:vertical;
+      min-height:50px;
+    }
+    .empty{
+      padding:10px;
+      font-size:13px;
+      color:var(--muted);
+      text-align:center;
+    }
+    @media(max-width:700px){
+      .header{flex-direction:column;align-items:flex-start;}
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="header">
+      <div>
+        <h1>إدارة البلاغات</h1>
+        <div class="header-sub">هذه الواجهة مخصصة للمسؤول فقط لمتابعة البلاغات الواردة من السائقين والركاب.</div>
+      </div>
+      <div>
+        <button class="btn btn-light" onclick="goAdminHome()">عودة للوحة المسؤول</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="filters">
+        <div>
+          <label for="statusFilter">حالة البلاغ</label>
+          <select id="statusFilter" onchange="renderReports()">
+            <option value="all">الكل</option>
+            <option value="open">مفتوح</option>
+            <option value="in_review">قيد المراجعة</option>
+            <option value="closed">مغلق</option>
+          </select>
+        </div>
+        <div>
+          <label for="roleFilter">نوع المبلِّغ</label>
+          <select id="roleFilter" onchange="renderReports()">
+            <option value="all">الكل</option>
+            <option value="driver">سائق</option>
+            <option value="passenger">راكب</option>
+          </select>
+        </div>
+        <div>
+          <label for="categoryFilter">نوع البلاغ</label>
+          <select id="categoryFilter" onchange="renderReports()">
+            <option value="all">الكل</option>
+            <option value="سلوك السائق">سلوك السائق</option>
+            <option value="سلوك الراكب">سلوك الراكب</option>
+            <option value="مشاكل في الرحلة">مشاكل في الرحلة</option>
+            <option value="مشاكل في الدفع">مشاكل في الدفع</option>
+            <option value="مشكلة تقنية">مشكلة تقنية في التطبيق</option>
+            <option value="أخرى">أخرى</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="reports-list" id="adminReportsContainer"></div>
+    </div>
+  </div>
+
+  <script>
+    function loadUsers(){ try{return JSON.parse(localStorage.getItem('rs_users')||'[]');}catch(e){return[];} }
+    function loadReports(){ try{return JSON.parse(localStorage.getItem('rs_reports')||'[]');}catch(e){return[];} }
+    function saveReports(arr){ localStorage.setItem('rs_reports', JSON.stringify(arr)); }
+    function getCurrentUserId(){ return localStorage.getItem('rs_current_user_id') || ''; }
+    function getCurrentRole(){ return localStorage.getItem('rs_current_role') || ''; }
+    function fmtTime(iso){ return new Date(iso).toLocaleString(); }
+
+    (function guard(){
+      const uid = getCurrentUserId();
+      const role = getCurrentRole();
+      const users = loadUsers();
+      const u = users.find(x=>x.id===uid);
+      if(!u || role!=='admin' || u.role!=='admin'){
+        location.href = 'loginAdmin.html';
+      }
+    })();
+
+    function goAdminHome(){ location.href = 'adminHome.html'; }
+
+    function statusToArabic(st){
+      if(st === 'in_review') return 'قيد المراجعة';
+      if(st === 'closed') return 'مغلق';
+      return 'مفتوح';
+    }
+    function statusBadgeClass(st){
+      if(st === 'in_review') return 'badge-review';
+      if(st === 'closed') return 'badge-closed';
+      return 'badge-open';
+    }
+    function severityToArabic(sv){
+      if(sv === 'urgent') return 'عاجل';
+      if(sv === 'critical') return 'هام جدًا';
+      return 'عادي';
+    }
+    function roleToArabic(r){
+      if(r==='driver') return 'سائق';
+      if(r==='passenger') return 'راكب';
+      if(r==='admin') return 'مسؤول';
+      return 'مستخدم';
+    }
+
+    function renderReports(){
+      const container = document.getElementById('adminReportsContainer');
+      container.innerHTML = '';
+
+      const statusF = document.getElementById('statusFilter').value;
+      const roleF   = document.getElementById('roleFilter').value;
+      const catF    = document.getElementById('categoryFilter').value;
+
+      let reports = loadReports();
+      reports.sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
+
+      reports = reports.filter(r=>{
+        if(statusF!=='all' && r.status!==statusF) return false;
+        if(roleF!=='all' && r.reporterRole!==roleF) return false;
+        if(catF!=='all' && r.category!==catF) return false;
+        return true;
+      });
+
+      if(!reports.length){
+        const div = document.createElement('div');
+        div.className = 'empty';
+        div.textContent = 'لا توجد بلاغات مطابقة للفلترة الحالية.';
+        container.appendChild(div);
+        return;
+      }
+
+      reports.forEach(r=>{
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const titleRow = document.createElement('div');
+        titleRow.className = 'title-row';
+
+        const title = document.createElement('div');
+        title.className = 'report-title';
+        title.textContent = r.category || 'بلاغ';
+
+        const badge = document.createElement('span');
+        badge.className = 'badge ' + statusBadgeClass(r.status);
+        badge.textContent = statusToArabic(r.status);
+
+        titleRow.appendChild(title);
+        titleRow.appendChild(badge);
+
+        const meta1 = document.createElement('div');
+        meta1.className = 'meta';
+        meta1.textContent =
+          'المبلِّغ: ' + (r.reporterName || 'مستخدم') +
+          ' · النوع: ' + roleToArabic(r.reporterRole || '') +
+          ' · الأهمية: ' + severityToArabic(r.severity);
+
+        const meta2 = document.createElement('div');
+        meta2.className = 'meta';
+        meta2.textContent =
+          'التاريخ: ' + fmtTime(r.createdAt) +
+          (r.rideSummary ? ' · الرحلة: ' + r.rideSummary : '');
+
+        const details = document.createElement('div');
+        details.className = 'details';
+        details.textContent = r.details || '';
+
+        const noteLabel = document.createElement('div');
+        noteLabel.className = 'meta';
+        noteLabel.style.marginTop = '6px';
+        noteLabel.textContent = 'ملاحظة / رد المسؤول:';
+
+        const noteArea = document.createElement('textarea');
+        noteArea.value = r.adminNote || '';
+        noteArea.onchange = () => updateAdminNote(r.id, noteArea.value);
+
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+
+        const btnOpen = document.createElement('button');
+        btnOpen.className = 'btn';
+        btnOpen.textContent = 'وضعه مفتوح';
+        btnOpen.onclick = () => updateStatus(r.id,'open');
+
+        const btnReview = document.createElement('button');
+        btnReview.className = 'btn';
+        btnReview.textContent = 'وضعه قيد المراجعة';
+        btnReview.onclick = () => updateStatus(r.id,'in_review');
+
+        const btnClosed = document.createElement('button');
+        btnClosed.className = 'btn btn-danger';
+        btnClosed.textContent = 'إغلاق البلاغ';
+        btnClosed.onclick = () => updateStatus(r.id,'closed');
+
+        actions.appendChild(btnOpen);
+        actions.appendChild(btnReview);
+        actions.appendChild(btnClosed);
+
+        card.appendChild(titleRow);
+        card.appendChild(meta1);
+        card.appendChild(meta2);
+        card.appendChild(details);
+        card.appendChild(noteLabel);
+        card.appendChild(noteArea);
+        card.appendChild(actions);
+
+        container.appendChild(card);
+      });
+    }
+
+    function updateStatus(id, newStatus){
+      const reports = loadReports();
+      const r = reports.find(x=>x.id===id);
+      if(!r) return;
+      r.status = newStatus;
+      saveReports(reports);
+      renderReports();
+    }
+
+    function updateAdminNote(id, note){
+      const reports = loadReports();
+      const r = reports.find(x=>x.id===id);
+      if(!r) return;
+      r.adminNote = note;
+      saveReports(reports);
+    }
+
+    window.addEventListener('load', renderReports);
+  </script>
+</body>
+</html>

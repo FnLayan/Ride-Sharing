@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>لوحة المسؤول</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{--bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;--accent:#cbb796;--accent-hover:#b29a75;--text:#3b2f24;--muted:#7a6a57;}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);font-family:'Tajawal',sans-serif;color:var(--text)}
+    .box{width:430px;max-width:95%;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;box-shadow:0 8px 26px rgba(0,0,0,.08);text-align:right}
+    h1{margin:0 0 10px;text-align:center;color:var(--muted);font-size:20px}
+    p{margin:0 0 16px;text-align:center;font-size:13px;color:#9a8b7a}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:12px 10px;font-weight:600;cursor:pointer;transition:.2s}
+    .btn:hover{background:var(--accent-hover)}
+    .footer{margin-top:16px;text-align:center}
+    .small{font-size:12px;color:#b3a392}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>لوحة المسؤول</h1>
+    <p>اختر العملية التي تريد إدارتها</p>
+
+    <div class="grid">
+      <button class="btn" onclick="goRequests()">طلبات السائقين</button>
+      <button class="btn" onclick="goReports()">الإبلاغات</button>
+      <button class="btn" onclick="goLowRatings()">التقييمات المنخفضة</button>
+      <button class="btn" onclick="goUnivCal()">التقويم الجامعي</button>
+    </div>
+
+    <div class="footer">
+      <button class="btn" style="margin-top:14px;width:100%;background:#d87a6b" onclick="doLogout()">تسجيل خروج</button>
+    </div>
+  </div>
+
+  <script>
+    function loadUsers(){ return JSON.parse(localStorage.getItem('rs_users') || '[]'); }
+    function getCurrentUserId(){ return localStorage.getItem('rs_current_user_id') || ''; }
+
+    (function guard(){
+      const users = loadUsers();
+      const u = users.find(x => x.id === getCurrentUserId());
+      if (!u || u.role !== 'admin') {
+        location.href = 'loginAdmin.html';
+      }
+    })();
+
+    function goRequests(){ location.href = 'admin-requests.html'; }
+    function goReports(){ location.href = 'admin-reports.html'; }
+    function goLowRatings(){ location.href = 'admin-ratings.html'; }
+
+    // نروح لصفحة التقويم المشتركة وهي الوحيده الغير مستقره باقي المهام كل وحده لها صفحة خاصه فيها
+    function goUnivCal(){ location.href = 'universityCalendar.html'; }
+
+    function doLogout(){
+      localStorage.setItem('rs_current_user_id','');
+      localStorage.setItem('rs_current_role','');
+      location.href = 'loginAdmin.html';
+    }
+  </script>
+</body>
+</html>

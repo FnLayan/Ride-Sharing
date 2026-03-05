@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>محادثة خاصة</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{
+      --bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;
+      --accent:#cbb796;--accent-hover:#b29a75;
+      --text:#3b2f24;--muted:#7a6a57;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      font-family:'Tajawal',sans-serif;
+      color:var(--text);
+    }
+    .wrap{
+      max-width:900px;
+      margin:20px auto;
+      padding:16px;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:16px;
+      box-shadow:0 8px 26px rgba(0,0,0,.08);
+    }
+    .header-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      margin-bottom:8px;
+      flex-wrap:wrap;
+    }
+    h1{
+      font-size:20px;
+      margin:0;
+      color:var(--muted);
+    }
+    .small{
+      font-size:12px;
+      color:#a1907f;
+    }
+    .btn{
+      background:var(--accent);
+      color:#fff;
+      border:none;
+      padding:7px 10px;
+      border-radius:8px;
+      font-weight:700;
+      cursor:pointer;
+      font-size:13px;
+    }
+    .btn:hover{background:var(--accent-hover)}
+    .chat-box{
+      height:360px;
+      border:1px solid #efe6db;
+      background:#fff;
+      border-radius:10px;
+      padding:10px;
+      overflow-y:auto;
+      margin-top:10px;
+    }
+    .msg-wrap{
+      margin:6px 0;
+      max-width:80%;
+    }
+    .msg-wrap.me{
+      margin-left:auto;
+      text-align:left;
+    }
+    .meta{
+      font-size:11px;
+      color:#816c5a;
+      margin-bottom:2px;
+      display:flex;
+      justify-content:flex-start;
+      gap:6px;
+      align-items:center;
+    }
+    .msg{
+      background:#eee;
+      padding:6px 10px;
+      border-radius:10px;
+      font-size:14px;
+      display:inline-block;
+    }
+    .msg.me{
+      background:#d8c4a9;
+    }
+    .time{
+      font-size:10px;
+      color:#b3a392;
+    }
+    .role-badge{
+      font-size:11px;
+      border-radius:999px;
+      padding:2px 6px;
+      border:1px solid #decfbf;
+      background:#fffaf3;
+    }
+    .row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:flex-end;
+      margin-top:10px;
+    }
+    .col{
+      flex:1;
+      min-width:220px;
+    }
+    input{
+      padding:8px;
+      width:100%;
+      border:1px solid var(--border);
+      border-radius:8px;
+      background:#fff;
+      font-family:'Tajawal',sans-serif;
+    }
+    .muted{
+      color:var(--muted);
+      font-size:13px;
+    }
+    .center{
+      text-align:center;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="header-row">
+        <div>
+          <h1 id="chatTitle">محادثة خاصة</h1>
+          <div id="chatSubtitle" class="small"></div>
+        </div>
+        <div>
+          <button class="btn" type="button" onclick="goContacts()">رجوع </button>
+        </div>
+      </div>
+
+      <div id="noUser" style="display:none" class="muted center">
+        لا يمكن استخدام المحادثة بدون تسجيل الدخول.
+      </div>
+
+      <div id="noContactSelected" style="display:none" class="muted center">
+        لم يتم اختيار جهة اتصال للمحادثة. عودي إلى صفحة جهات الاتصال واختاري "محادثة".
+      </div>
+
+      <div id="notInContacts" style="display:none" class="muted center">
+        لا توجد علاقة جهات اتصال مقبولة بينكما حالياً. يجب قبول طلب الإضافة أولاً.
+      </div>
+
+      <div id="chatArea" style="display:none">
+        <div id="chatBox" class="chat-box"></div>
+        <div class="row">
+          <div class="col">
+            <input id="chatInput" placeholder="اكتبي رسالتك هنا..."/>
+          </div>
+          <button class="btn" type="button" onclick="sendMsg()">إرسال</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="notifications-bar.js"></script>
+<script>
+  // Helpers
+  function load(key){ try{return JSON.parse(localStorage.getItem(key)||'[]');}catch(e){return[];} }
+  function save(key,val){ localStorage.setItem(key, JSON.stringify(val)); }
+  function uid(){ return 'pm'+Date.now()+Math.floor(Math.random()*1000); }
+  function fmtTimeShort(iso){
+    if(!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  }
+
+  const currentUserId = localStorage.getItem('rs_current_user_id') || '';
+  const currentRole   = localStorage.getItem('rs_current_role') || '';
+  const otherUserId   = localStorage.getItem('rs_private_chat_user_id') || '';
+
+  let users    = load('rs_users');
+  let contacts = load('rs_contacts');       // [{userId,contactUserId}]
+  let msgs     = load('rs_private_msgs');   // [{id,from,to,text,createdAt}]
+
+  function getUser(id){ return users.find(u=>u.id===id) || null; }
+
+  function isContacts(a,b){
+    return contacts.some(c =>
+      (c.userId === a && c.contactUserId === b) ||
+      (c.userId === b && c.contactUserId === a)
+    );
+  }
+
+  function init(){
+    const noUserEl = document.getElementById('noUser');
+    const noSelEl  = document.getElementById('noContactSelected');
+    const notCtEl  = document.getElementById('notInContacts');
+    const chatArea = document.getElementById('chatArea');
+
+    if(!currentUserId){
+      noUserEl.style.display = 'block';
+      return;
+    }
+
+    if(!otherUserId){
+      noSelEl.style.display = 'block';
+      return;
+    }
+
+    const me = getUser(currentUserId);
+    const other = getUser(otherUserId);
+
+    const titleEl = document.getElementById('chatTitle');
+    const subEl   = document.getElementById('chatSubtitle');
+
+    if(other){
+      titleEl.textContent = 'محادثة مع: ' + (other.name || 'مستخدم');
+      let roleText = 'مستخدم';
+      if(other.role === 'driver') roleText = 'سائق';
+      else if(other.role === 'passenger') roleText = 'راكب';
+      else if(other.role === 'admin') roleText = 'مسؤول';
+
+      subEl.textContent = (other.email || '') + (roleText ? ' · الدور: '+roleText : '');
+    }else{
+      titleEl.textContent = 'محادثة خاصة';
+      subEl.textContent   = '';
+    }
+
+    // تأكد إنهم جهات اتصال مقبوله قبلها
+    if(!isContacts(currentUserId, otherUserId)){
+      notCtEl.style.display = 'block';
+      return;
+    }
+
+    chatArea.style.display = 'block';
+    loadMessages();
+  }
+
+  function loadMessages(){
+    const box = document.getElementById('chatBox');
+    box.innerHTML = '';
+
+    const conv = msgs
+      .filter(m =>
+        (m.from === currentUserId && m.to === otherUserId) ||
+        (m.from === otherUserId && m.to === currentUserId)
+      )
+      .sort((a,b)=> new Date(a.createdAt) - new Date(b.createdAt));
+
+    if(!conv.length){
+      box.innerHTML = '<div class="muted center">لا توجد رسائل بعد. ابدئي المحادثة الآن.</div>';
+      return;
+    }
+
+    conv.forEach(m=>{
+      const mine = (m.from === currentUserId);
+      const u = getUser(m.from);
+      const name = u ? (u.name || 'مستخدم') : 'مستخدم';
+      let roleText = '';
+      if(u){
+        if(u.role === 'driver') roleText = '🚗 سائق';
+        else if(u.role === 'passenger') roleText = '🧍‍♀️ راكب';
+        else if(u.role === 'admin') roleText = '👤 مسؤول';
+        else roleText = 'عضو';
+      }
+
+      const wrap = document.createElement('div');
+      wrap.className = 'msg-wrap' + (mine ? ' me' : '');
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.innerHTML = `
+        <span>${name}</span>
+        ${roleText ? `<span class="role-badge">${roleText}</span>` : ''}
+        <span class="time">${fmtTimeShort(m.createdAt)}</span>
+      `;
+
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'msg' + (mine ? ' me' : '');
+      msgDiv.textContent = m.text;
+
+      wrap.appendChild(meta);
+      wrap.appendChild(msgDiv);
+      box.appendChild(wrap);
+    });
+
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function sendMsg(){
+    if(!currentUserId || !otherUserId) return;
+    if(!isContacts(currentUserId, otherUserId)){
+      alert('لا توجد علاقة جهات اتصال مقبولة بينكما.');
+      return;
+    }
+
+    const input = document.getElementById('chatInput');
+    const text  = input.value.trim();
+    if(!text) return;
+
+    msgs.push({
+      id: uid(),
+      from: currentUserId,
+      to: otherUserId,
+      text,
+      createdAt: new Date().toISOString()
+    });
+    save('rs_private_msgs', msgs);
+
+    input.value = '';
+    loadMessages();
+  }
+
+  window.addEventListener('load', init);
+
+  function goContacts(){
+  const role = localStorage.getItem('rs_current_role') || '';
+
+  if (role === 'admin') {
+    // المسؤول  يرجع للوحة المسؤول
+    location.href = 'adminHome.html';
+  } else {
+    // راكب أو سائق يرجع لجهات التواصل
+    location.href = 'contacts.html';
+  }
+}
+</script>
+</body>
+</html>

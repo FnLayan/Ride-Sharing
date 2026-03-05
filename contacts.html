@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>جهات التواصل</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{
+      --bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;
+      --accent:#cbb796;--accent-hover:#b29a75;
+      --text:#3b2f24;--muted:#7a6a57;--danger:#c35b4d;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      font-family:'Tajawal',sans-serif;
+      color:var(--text);
+    }
+    .wrap{
+      max-width:900px;
+      margin:20px auto;
+      padding:16px;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:16px;
+      box-shadow:0 8px 26px rgba(0,0,0,.08);
+    }
+    h1{
+      text-align:center;
+      font-size:21px;
+      margin-bottom:10px;
+      color:var(--muted);
+    }
+    .section{
+      margin-top:14px;
+      border-top:1px solid #efe6db;
+      padding-top:10px;
+    }
+    .section:first-of-type{
+      border-top:none;
+      padding-top:0;
+    }
+    .label{
+      font-weight:700;
+      font-size:14px;
+      color:var(--muted);
+      margin-bottom:4px;
+      display:block;
+    }
+    .small{
+      font-size:12px;
+      color:#a1907f;
+      margin-top:2px;
+    }
+    .btn{
+      background:var(--accent);
+      color:#fff;
+      border:none;
+      padding:8px 10px;
+      border-radius:8px;
+      font-weight:700;
+      cursor:pointer;
+      font-size:13px;
+    }
+    .btn:hover{background:var(--accent-hover)}
+    .btn-sm{
+      padding:5px 8px;
+      font-size:12px;
+    }
+    .btn-ghost{
+      background:#fff;
+      color:var(--muted);
+      border:1px solid var(--border);
+    }
+    .btn-ghost:hover{
+      background:#f3ebe0;
+    }
+    input{
+      padding:8px;
+      width:100%;
+      border:1px solid var(--border);
+      border-radius:8px;
+      margin-top:4px;
+      background:#fff;
+      font-family:'Tajawal',sans-serif;
+    }
+    .row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:flex-end;
+    }
+    .col{
+      flex:1;
+      min-width:220px;
+    }
+    .muted{
+      color:var(--muted);
+      font-size:13px;
+    }
+    .muted-sm{
+      color:var(--muted);
+      font-size:12px;
+    }
+    .item{
+      border:1px solid #efe6db;
+      border-radius:10px;
+      padding:9px 10px;
+      background:#fff;
+      margin-bottom:6px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      font-size:14px;
+    }
+    .item-main{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+    .name{
+      font-weight:700;
+    }
+    .tag{
+      font-size:11px;
+      color:#9a8b7a;
+    }
+    .pill{
+      font-size:11px;
+      border-radius:999px;
+      padding:2px 8px;
+      border:1px solid #decfbf;
+      background:#fffaf3;
+      color:#7a6a57;
+    }
+    .danger-text{
+      font-size:12px;
+      color:var(--danger);
+      margin-top:4px;
+    }
+    .empty{
+      font-size:13px;
+      color:var(--muted);
+      padding:8px;
+      text-align:center;
+    }
+    .error{
+      font-size:12px;
+      color:var(--danger);
+      margin-top:4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>جهات الاتصال</h1>
+      <button onclick="goHome()" 
+        style="margin:8px 0 12px; padding:6px 10px; background:#b29a75; color:#fff; border:none; border-radius:6px; cursor:pointer;">
+         رجوع للصفحة الرئيسية
+      </button>
+
+      <div id="noUser" class="section" style="display:none">
+        <p class="muted" style="text-align:center">
+          لا يمكن استخدام جهات الاتصال بدون تسجيل الدخول.<br>
+          ادخلي أولاً كـ سائق أو راكب من صفحة الدخول.
+        </p>
+      </div>
+
+      <div id="mainContent" style="display:none">
+        <!-- إضافة عن طريق الإيميل -->
+        <div class="section">
+          <span class="label">إضافة جهة اتصال جديدة عبر الإيميل:</span>
+          <div class="row">
+            <div class="col">
+              <input id="contactEmail" placeholder="Ex: 44*******@sm.imamu.edu.sa"/>
+              <div class="small">
+                سيتم إرسال طلب إضافة للطرف الآخر، وله حرية قبول الطلب أو رفضه.
+              </div>
+              <div id="emailError" class="error" style="display:none"></div>
+            </div>
+            <button class="btn" type="button" onclick="addContactByEmail()">إرسال طلب الإضافة</button>
+          </div>
+        </div>
+
+        <!-- إضافة من آخر الرحلات -->
+        <div class="section">
+          <span class="label">إضافة من الأشخاص الذين شاركتِ معهم رحلات مؤخراً:</span>
+          <div class="small">
+            يظهر هنا السائقون والركاب الذين كانوا معك في نفس الرحلات (القريبة أو المكتملة).
+          </div>
+          <div id="recentPartners"></div>
+        </div>
+
+        <!-- الطلبات الواردة -->
+        <div class="section">
+          <span class="label">طلبات الإضافة الواردة:</span>
+          <div id="incomingRequests"></div>
+        </div>
+
+        <!-- جهات الاتصال -->
+        <div class="section">
+          <span class="label">جهات الاتصال الخاصة بي:</span>
+          <div id="contactsList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="notifications-bar.js"></script>
+<script>
+  function load(key){ try{return JSON.parse(localStorage.getItem(key)||'[]');}catch(e){return[];} }
+  function save(key,val){ localStorage.setItem(key, JSON.stringify(val)); }
+  function uid(){ return 'ct'+Date.now()+Math.floor(Math.random()*1000); }
+
+  function alertMsg(m){ alert(m); }
+
+  const currentUserId = localStorage.getItem('rs_current_user_id') || '';
+  const currentRole   = localStorage.getItem('rs_current_role') || '';
+
+  let users     = load('rs_users');            
+  let rides     = load('rs_rides');           
+  let bookings  = load('rs_bookings');        
+  let contacts  = load('rs_contacts');        
+  let requests  = load('rs_contact_requests'); 
+
+  function getUser(id){ return users.find(u=>u.id===id) || null; }
+
+  function ensureUser(){
+    if(!currentUserId){
+      document.getElementById('noUser').style.display = 'block';
+      document.getElementById('mainContent').style.display = 'none';
+      return false;
+    }
+    document.getElementById('noUser').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    return true;
+  }
+
+  
+  // ===== إضافة عن طريق الإيميل =====
+  function addContactByEmail(){
+   if(!ensureUser()) return;
+
+    const emailInput = document.getElementById('contactEmail');
+    const errEl      = document.getElementById('emailError');
+
+    errEl.style.display = 'none';
+    errEl.textContent   = '';
+
+    const email = emailInput.value.trim();
+    if(!email){
+      errEl.textContent = 'أدخلي البريد الإلكتروني أولاً.';
+      errEl.style.display = 'block';
+      emailInput.focus();
+      return;
+    }
+
+    // البحث عن المستخدم
+    const other = users.find(u => u.email === email);
+    if(!other){
+      errEl.textContent = 'هذا البريد غير مسجّل في النظام.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    if(other.id === currentUserId){
+      errEl.textContent = 'لا يمكنك إضافة نفسك كجهة اتصال.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    // هل هما أصلاً جهات اتصال؟
+    if(isAlreadyContact(currentUserId, other.id)){
+      errEl.textContent = 'هذا المستخدم موجود بالفعل في جهات الاتصال لديك.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    //  حالة الأدمن: إضافة مباشرة بدون استئذان حتى
+    if(currentRole === 'admin'){
+      const nowIso = new Date().toISOString();
+
+      requests = requests.filter(r => !(
+        (r.fromUserId === currentUserId && r.toUserId === other.id) ||
+        (r.fromUserId === other.id && r.toUserId === currentUserId)
+      ));
+      save('rs_contact_requests', requests);
+
+      contacts.push({
+        userId: currentUserId,
+        contactUserId: other.id,
+        createdAt: nowIso
+      });
+      contacts.push({
+        userId: other.id,
+        contactUserId: currentUserId,
+        createdAt: nowIso
+      });
+      save('rs_contacts', contacts);
+
+      emailInput.value = '';
+      alertMsg('تمت إضافة المستخدم مباشرة إلى جهات الاتصال (حساب مسؤول).');
+      renderContactsList();
+      return;
+    }
+
+    //  باقي الأدوار نظام طلبات طبيعي
+    const pending = requests.find(r =>
+      r.status === 'pending' &&
+      (
+        (r.fromUserId === currentUserId && r.toUserId === other.id) ||
+        (r.fromUserId === other.id && r.toUserId === currentUserId)
+      )
+    );
+    if(pending){
+      errEl.textContent = 'يوجد طلب إضافة معلّق بينكما بالفعل.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    // إنشاء طلب جديد لغير الادمن
+    const nowIso = new Date().toISOString();
+    const req = {
+      id: uid(),
+      fromUserId: currentUserId,
+      toUserId: other.id,
+      status: 'pending', // pending | accepted | rejected
+      createdAt: nowIso
+    };
+    requests.push(req);
+    save('rs_contact_requests', requests);
+
+    emailInput.value = '';
+    alertMsg('تم إرسال طلب الإضافة. سينتظر موافقة الطرف الآخر.');
+  }
+
+  function isAlreadyContact(a, b){
+    return contacts.some(c =>
+      (c.userId === a && c.contactUserId === b) ||
+      (c.userId === b && c.contactUserId === a)
+    );
+  }
+
+  // ===== عرض الطلبات الواردة =====
+  function renderIncomingRequests(){
+    const box = document.getElementById('incomingRequests');
+    box.innerHTML = '';
+
+    const incoming = requests
+      .filter(r => r.toUserId === currentUserId && r.status === 'pending')
+      .sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
+
+    if(!incoming.length){
+      box.innerHTML = '<div class="empty">لا توجد طلبات إضافة حالياً.</div>';
+      return;
+    }
+
+    incoming.forEach(r=>{
+      const from = getUser(r.fromUserId);
+      const name = from ? from.name : 'مستخدم';
+      const email = from ? from.email : '';
+      const roleText = from
+        ? (from.role === 'driver' ? 'سائق' :
+           from.role === 'passenger' ? 'راكب' :
+           from.role === 'admin' ? 'مسؤول' : 'مستخدم')
+        : 'مستخدم';
+
+      const div = document.createElement('div');
+      div.className = 'item';
+
+      div.innerHTML = `
+        <div class="item-main">
+          <span class="name">${name}</span>
+          <span class="tag">${email || ''}</span>
+          <span class="tag">الدور في النظام: ${roleText}</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-sm" type="button" onclick="acceptRequest('${r.id}')">قبول</button>
+          <button class="btn btn-sm btn-ghost" type="button" onclick="rejectRequest('${r.id}')">رفض</button>
+        </div>
+      `;
+
+      box.appendChild(div);
+    });
+  }
+
+  function acceptRequest(reqId){
+    const r = requests.find(x=>x.id===reqId);
+    if(!r) return;
+
+    r.status = 'accepted';
+
+    // إضافة إلى جهات الاتصال من الطرفين (لو كانوا مو مضافين)
+    if(!isAlreadyContact(r.fromUserId, r.toUserId)){
+      contacts.push({
+        userId: r.fromUserId,
+        contactUserId: r.toUserId,
+        createdAt: new Date().toISOString()
+      });
+      contacts.push({
+        userId: r.toUserId,
+        contactUserId: r.fromUserId,
+        createdAt: new Date().toISOString()
+      });
+      save('rs_contacts', contacts);
+    }
+
+    save('rs_contact_requests', requests);
+    renderIncomingRequests();
+    renderContactsList();
+  }
+
+  function rejectRequest(reqId){
+    const r = requests.find(x=>x.id===reqId);
+    if(!r) return;
+    r.status = 'rejected';
+    save('rs_contact_requests', requests);
+    renderIncomingRequests();
+  }
+
+  // ===== قائمة جهات الاتصال =====
+  function renderContactsList(){
+    const box = document.getElementById('contactsList');
+    box.innerHTML = '';
+
+    const myContacts = contacts
+      .filter(c => c.userId === currentUserId)
+      .map(c => c.contactUserId);
+
+    if(!myContacts.length){
+      box.innerHTML = '<div class="empty">لا توجد جهات اتصال مضافة حتى الآن.</div>';
+      return;
+    }
+
+    // إزالة التكرار
+    const uniqueIds = [...new Set(myContacts)];
+
+    uniqueIds.forEach(id=>{
+      const u = getUser(id);
+      if(!u) return;
+      const name = u.name || 'مستخدم';
+      const email = u.email || '';
+      const roleText = u.role === 'driver'
+        ? 'سائق'
+        : u.role === 'passenger'
+          ? 'راكب'
+          : u.role === 'admin'
+            ? 'مسؤول'
+            : 'مستخدم';
+
+      const div = document.createElement('div');
+      div.className = 'item';
+
+      div.innerHTML = `
+        <div class="item-main">
+          <span class="name">${name}</span>
+          <span class="tag">${email}</span>
+          <span class="tag">الدور في النظام: ${roleText}</span>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-sm" type="button" onclick="openPrivateChat('${u.id}')">محادثة</button>
+        </div>
+      `;
+
+      box.appendChild(div);
+    });
+  }
+
+  // ===== أشخاص شاركت معهم الرحلات =====
+  function renderRecentPartners(){
+    const box = document.getElementById('recentPartners');
+    box.innerHTML = '';
+
+    // نجمع كل المستخدمين اللي قد شاركونا رحلات
+    const partnerIds = new Set();
+
+    if(currentRole === 'driver'){
+      // رحلات انا السائق فيها
+      const myRides = rides.filter(r => r.driverId === currentUserId);
+      myRides.forEach(r=>{
+        const rideBookings = bookings.filter(
+          b => b.rideId === r.id && (b.status === 'joined' || b.status === 'paid')
+        );
+        rideBookings.forEach(b => {
+          if(b.passengerId && b.passengerId !== currentUserId){
+            partnerIds.add(b.passengerId);
+          }
+        });
+      });
+    }else{
+      // راكب: نجيب الحجوزات اللي اتا فيها
+      const myBookings = bookings.filter(b => b.passengerId === currentUserId);
+      myBookings.forEach(b=>{
+        const ride = rides.find(r => r.id === b.rideId);
+        if(!ride) return;
+        if(ride.driverId && ride.driverId !== currentUserId){
+          partnerIds.add(ride.driverId);
+        }
+        const others = bookings.filter(
+          x => x.rideId === b.rideId && x.passengerId && x.passengerId !== currentUserId
+        );
+        others.forEach(x => partnerIds.add(x.passengerId));
+      });
+    }
+
+    // نفلتر اللي أصلاً هم جهات اتصال
+    const ids = [...partnerIds].filter(id => !isAlreadyContact(currentUserId, id));
+
+    if(!ids.length){
+      box.innerHTML = '<div class="empty">لا يوجد حالياً أشخاص جدد من الرحلات الأخيرة يمكن إضافتهم.</div>';
+      return;
+    }
+
+    ids.forEach(id=>{
+      const u = getUser(id);
+      if(!u) return;
+      const name = u.name || 'مستخدم';
+      const email = u.email || '';
+      const roleText = u.role === 'driver'
+        ? 'سائق'
+        : u.role === 'passenger'
+          ? 'راكب'
+          : u.role === 'admin'
+            ? 'مسؤول'
+            : 'مستخدم';
+
+      // هل فيه طلب معلق بينكما؟
+      const pending = requests.find(r =>
+        r.status === 'pending' &&
+        (
+          (r.fromUserId === currentUserId && r.toUserId === id) ||
+          (r.fromUserId === id && r.toUserId === currentUserId)
+        )
+      );
+
+      const div = document.createElement('div');
+      div.className = 'item';
+
+      let rightHtml = '';
+      if(pending){
+        rightHtml = '<span class="pill">طلب إضافة معلّق</span>';
+      }else{
+        rightHtml = `<button class="btn btn-sm" type="button" onclick="sendContactRequest('${id}')">إرسال طلب إضافة</button>`;
+      }
+
+      div.innerHTML = `
+        <div class="item-main">
+          <span class="name">${name}</span>
+          <span class="tag">${email}</span>
+          <span class="tag">الدور في النظام: ${roleText}</span>
+        </div>
+        <div>${rightHtml}</div>
+      `;
+
+      box.appendChild(div);
+    });
+  }
+
+  function sendContactRequest(otherUserId){
+    if(!ensureUser()) return;
+
+    if(otherUserId === currentUserId){
+      alertMsg('لا يمكنك إضافة نفسك.');
+      return;
+    }
+
+    const other = getUser(otherUserId);
+    if(!other){
+      alertMsg('تعذر العثور على هذا المستخدم.');
+      return;
+    }
+
+    if(isAlreadyContact(currentUserId, otherUserId)){
+      alertMsg('هذا المستخدم موجود بالفعل في جهات الاتصال لديك.');
+      return;
+    }
+
+    const pending = requests.find(r =>
+      r.status === 'pending' &&
+      (
+        (r.fromUserId === currentUserId && r.toUserId === otherUserId) ||
+        (r.fromUserId === otherUserId && r.toUserId === currentUserId)
+      )
+    );
+    if(pending){
+      alertMsg('يوجد طلب إضافة معلّق بينكما بالفعل.');
+      return;
+    }
+
+    const nowIso = new Date().toISOString();
+    requests.push({
+      id: uid(),
+      fromUserId: currentUserId,
+      toUserId: otherUserId,
+      status: 'pending',
+      createdAt: nowIso
+    });
+    save('rs_contact_requests', requests);
+
+    alertMsg('تم إرسال طلب الإضافة لهذا المستخدم.');
+    renderRecentPartners();
+  }
+
+  // فتح محادثة خاصة
+  function openPrivateChat(otherId){
+    localStorage.setItem('rs_private_chat_user_id', otherId);
+    location.href = 'privateChat.html';
+  }
+
+  window.addEventListener('load', ()=>{
+    if(!ensureUser()) return;
+    renderIncomingRequests();
+    renderContactsList();
+    renderRecentPartners();
+  });
+
+  function goHome(){
+    const role = localStorage.getItem('rs_current_role') || '';
+    if (role === 'driver') {
+      location.href = 'driverHome.html';
+    } else if (role === 'passenger') {
+      location.href = 'passengerHome.html';
+    } else if (role === 'admin') {
+      location.href = 'adminHome.html';
+    } else {
+      location.href = 'index.html';
+    }
+  }
+</script>
+</body>
+</html>

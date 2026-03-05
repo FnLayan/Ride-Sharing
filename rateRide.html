@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>تقييم الرحلة</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{
+      --bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;
+      --accent:#cbb796;--accent-hover:#b29a75;
+      --text:#3b2f24;--muted:#7a6a57;--danger:#d87a6b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;background:var(--bg);
+      font-family:'Tajawal',sans-serif;color:var(--text);
+      display:flex;align-items:center;justify-content:center;
+    }
+    .wrap{
+      width:min(600px,95vw);
+      background:var(--card);
+      border-radius:16px;
+      border:1px solid var(--border);
+      box-shadow:0 8px 24px rgba(0,0,0,.1);
+      padding:18px 18px 20px;
+    }
+    h1{margin:0 0 10px;font-size:20px;color:var(--muted);text-align:center}
+    .muted{color:var(--muted);font-size:13px}
+    .badge{
+      display:inline-block;padding:3px 8px;border-radius:999px;
+      font-size:12px;background:#eee;border:1px solid #ddd0c8;
+      margin-inline-start:6px;
+    }
+    .badge-low{background:#fde8e8;border-color:#f2b9b9;color:#7a1f1f;}
+    .field{margin-top:12px;}
+    label{display:block;margin-bottom:4px;font-size:14px;color:var(--muted);}
+    textarea{
+      width:100%;min-height:80px;border-radius:10px;
+      border:1px solid #e3d6c7;padding:8px;background:#fff;
+      font-family:'Tajawal',sans-serif;
+    }
+    .stars-row{
+      display:flex;gap:6px;flex-direction:row-reverse;
+      justify-content:flex-start;
+    }
+    .star-btn{
+      width:34px;height:34px;border-radius:50%;
+      border:1px solid #e3d6c7;background:#fff;
+      font-size:18px;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      transition:background .2s,border-color .2s,transform .15s;
+    }
+    .star-btn.selected{
+      background:#ffeb99;border-color:#e0b74f;transform:translateY(-1px);
+    }
+    .reasons{
+      display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;
+    }
+    .reason-chip{
+      border-radius:999px;border:1px solid #e3d6c7;
+      padding:4px 10px;font-size:12px;background:#fff;
+      cursor:pointer;
+    }
+    .reason-chip.on{
+      background:#fde8e8;border-color:#f2b9b9;color:#7a1f1f;
+    }
+    .btn-row{
+      display:flex;gap:8px;margin-top:16px;justify-content:flex-end;flex-wrap:wrap;
+    }
+    .btn{
+      border:none;border-radius:10px;padding:9px 14px;
+      font-weight:700;font-size:14px;cursor:pointer;
+    }
+    .btn-main{
+      background:var(--accent);color:#fff;
+    }
+    .btn-main:hover{background:var(--accent-hover);}
+    .btn-ghost{
+      background:#fff;border:1px solid var(--border);color:var(--muted);
+    }
+    .btn-ghost:hover{background:#f3ebe0;}
+    .msg{margin-top:10px;font-size:13px;}
+    .msg.error{
+      background:rgba(216,122,107,.08);color:#7a1f1f;
+      border:1px solid rgba(216,122,107,.4);padding:8px;border-radius:8px;
+    }
+    .msg.ok{
+      background:rgba(108,169,99,.12);color:#256029;
+      border:1px solid rgba(108,169,99,.4);padding:8px;border-radius:8px;
+    }
+    .ride-box{
+      border:1px solid #efe6db;border-radius:10px;
+      padding:10px 12px;background:#fff;margin-bottom:8px;
+    }
+    .ride-title{font-size:15px;font-weight:700;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>تقييم الرحلة</h1>
+    <div id="rideInfo" class="ride-box" style="display:none"></div>
+    <p id="alreadyMsg" class="msg ok" style="display:none"></p>
+
+    <form id="rateForm" onsubmit="submitRating(event)" style="display:none">
+      <div class="field">
+        <label id="ratingLabel">كم تعطي السائق في هذه الرحلة؟</label>
+        <div class="stars-row" id="starsRow">
+        </div>
+        <div class="muted" id="ratingHint" style="margin-top:4px"></div>
+      </div>
+
+      <div class="field">
+        <label>أسباب التقييم (اختياري):</label>
+        <div class="reasons" id="reasonsRow">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>تعليق إضافي (اختياري):</label>
+        <textarea id="comment" placeholder="مثال: التعامل، الالتزام بالوقت، النظافة، إلخ."></textarea>
+      </div>
+
+      <div class="btn-row">
+        <button type="button" class="btn btn-ghost" onclick="goBack()">رجوع لسجل الرحلات</button>
+        <button type="submit" class="btn btn-main">إرسال التقييم</button>
+      </div>
+      <div id="msgBox" class="msg" style="display:none"></div>
+    </form>
+
+    <div id="noAccess" class="msg error" style="display:none">
+      لا يمكن فتح صفحة التقييم لهذه الرحلة. تأكدي أنك داخل على الصفحة من سجل الرحلات وبعد اكتمال الرحلة.
+    </div>
+  </div>
+  
+<script src="notifications-bar.js"></script>
+<script>
+  function loadRides(){ try{return JSON.parse(localStorage.getItem('rs_rides')||'[]');}catch(e){return[];} }
+  function loadUsers(){ try{return JSON.parse(localStorage.getItem('rs_users')||'[]');}catch(e){return[];} }
+  function loadBookings(){ try{return JSON.parse(localStorage.getItem('rs_bookings')||'[]');}catch(e){return[];} }
+  function loadRatings(){ try{return JSON.parse(localStorage.getItem('rs_ratings')||'[]');}catch(e){return[];} }
+  function saveRatings(arr){ localStorage.setItem('rs_ratings', JSON.stringify(arr)); }
+
+  function escapeHtml(s){
+    return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  }
+  function fmtTime(iso){ return new Date(iso).toLocaleString(); }
+
+  let currentRide = null;
+  let currentUser = null;
+  let targetUser  = null;
+  let selectedRating = 0;
+  const selectedReasons = new Set();
+  let currentFromRole = '';
+  function goBack(){
+    location.href = 'rideHistory.html';
+  }
+
+  function buildStars(){
+    const row = document.getElementById('starsRow');
+    row.innerHTML = '';
+    for(let i=1;i<=5;i++){
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'star-btn';
+      btn.textContent = '★';
+      btn.dataset.value = String(i);
+      btn.onclick = ()=> setRating(i);
+      row.appendChild(btn);
+    }
+  }
+
+  function setRating(v){
+    selectedRating = v;
+    const buttons = document.querySelectorAll('.star-btn');
+    buttons.forEach(b=>{
+      const val = parseInt(b.dataset.value,10);
+      if(val <= v) b.classList.add('selected');
+      else b.classList.remove('selected');
+    });
+    const hint = document.getElementById('ratingHint');
+    const low = v<=2;
+    let text = '';
+    if(v===1) text = 'سيّئ جدًا';
+    else if(v===2) text = 'سيّئ / أقل من المتوقع';
+    else if(v===3) text = 'عادي';
+    else if(v===4) text = 'جيد';
+    else if(v===5) text = 'ممتاز';
+    hint.innerHTML = 'تقييمك: ' + text +
+      (low ? ' <span class="badge badge-low">سيتم إرسالها لقائمة التقييمات المنخفضة عند المسؤول</span>' : '');
+  }
+
+  function buildReasons(){
+    const reasons = [
+      'تأخير عن الوقت المتفق عليه',
+      'قيادة متهورة / غير آمنة',
+      'عدم احترام / أسلوب غير لائق',
+      'نظافة السيارة سيئة / إزعاج',
+      'تغيير في المسار / توقّف غير مبرَّر',
+      'سبب آخر'
+    ];
+    const row = document.getElementById('reasonsRow');
+    row.innerHTML = '';
+    reasons.forEach(r=>{
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'reason-chip';
+      chip.textContent = r;
+      chip.onclick = ()=>{
+        if(selectedReasons.has(r)){
+          selectedReasons.delete(r);
+          chip.classList.remove('on');
+        }else{
+          selectedReasons.add(r);
+          chip.classList.add('on');
+        }
+      };
+      row.appendChild(chip);
+    });
+  }
+
+  function showMsg(text, ok){
+    const box = document.getElementById('msgBox');
+    box.style.display = 'block';
+    box.textContent = text;
+    box.className = 'msg ' + (ok ? 'ok' : 'error');
+  }
+
+  // تحديث متوسط تقييم اي مستخدم
+  function updateUserAverage(userId, newRate){
+    const users = loadUsers();
+    const u = users.find(x=>x.id===userId);
+    if(!u) return;
+    u.ratingCount = (u.ratingCount || 0) + 1;
+    u.ratingSum   = (u.ratingSum   || 0) + newRate;
+    u.rating      = u.ratingSum / u.ratingCount;
+    localStorage.setItem('rs_users', JSON.stringify(users));
+  }
+
+  function init(){
+    buildStars();
+    buildReasons();
+
+    const userId   = localStorage.getItem('rs_current_user_id') || '';
+    const appRole  = localStorage.getItem('rs_current_role') || '';
+    const rideId   = localStorage.getItem('rs_rate_ride_id') || '';
+    const fromRole = localStorage.getItem('rs_rate_from_role') || '';
+    const targetId = localStorage.getItem('rs_rate_target_user_id') || ''; 
+
+    const rideInfoBox  = document.getElementById('rideInfo');
+    const form         = document.getElementById('rateForm');
+    const noAccess     = document.getElementById('noAccess');
+    const alreadyMsg   = document.getElementById('alreadyMsg');
+    const ratingLabel  = document.getElementById('ratingLabel');
+
+    if(!userId || !rideId || !fromRole){
+      noAccess.style.display = 'block';
+      return;
+    }
+
+    const rides    = loadRides();
+    const users    = loadUsers();
+    const bookings = loadBookings();
+    const ratings  = loadRatings();
+
+    const ride = rides.find(r=>r.id===rideId);
+    if(!ride || ride.status!=='completed'){
+      noAccess.style.display='block';
+      return;
+    }
+
+    const me = users.find(u=>u.id===userId);
+    if(!me){
+      noAccess.style.display='block';
+      return;
+    }
+
+    currentRide   = ride;
+    currentUser   = me;
+    currentFromRole = fromRole;
+
+    //راكب يقيّم السائق
+    if(fromRole === 'passenger'){
+      if(appRole !== 'passenger'){
+        noAccess.style.display='block';
+        return;
+      }
+
+      // تأكيد إنه كان راكب في الرحلة
+      const myBk = bookings.find(
+        b=>b.rideId===ride.id && b.passengerId===userId
+      );
+      if(!myBk){
+        noAccess.style.display='block';
+        return;
+      }
+
+      const driver = users.find(u=>u.id===ride.driverId);
+      if(!driver){
+        noAccess.style.display='block';
+        return;
+      }
+      targetUser = driver;
+
+      const existing = ratings.find(
+        r=>r.rideId===ride.id && r.fromUserId===userId && r.toUserId===driver.id
+      );
+      if(existing){
+        rideInfoBox.style.display='block';
+        rideInfoBox.innerHTML =
+          '<div class="ride-title">'+
+          escapeHtml(ride.from.name)+' → '+escapeHtml(ride.to.name)+'</div>'+
+          '<div class="muted">السائق: '+escapeHtml(driver.name||'غير معروف')+'</div>'+
+          '<div class="muted">وقت الرحلة: '+fmtTime(ride.departAt)+'</div>';
+        alreadyMsg.style.display='block';
+        alreadyMsg.textContent =
+          'سبق أن أرسلتِ تقييمًا لهذه الرحلة (التقييم: '+existing.value+'/5).';
+        return;
+      }
+
+      rideInfoBox.style.display='block';
+      rideInfoBox.innerHTML =
+        '<div class="ride-title">'+
+        escapeHtml(ride.from.name)+' → '+escapeHtml(ride.to.name)+'</div>'+
+        '<div class="muted">السائق: '+escapeHtml(driver.name||'غير معروف')+'</div>'+
+        '<div class="muted">وقت الرحلة: '+fmtTime(ride.departAt)+'</div>';
+
+      ratingLabel.textContent = 'كم تعطي السائق في هذه الرحلة؟';
+      form.style.display='block';
+      return;
+    }
+
+    // سائق يقيّم راكب معين
+    if(fromRole === 'driver'){
+      if(appRole !== 'driver'){
+        noAccess.style.display='block';
+        return;
+      }
+      if(ride.driverId !== userId){
+        noAccess.style.display='block';
+        return;
+      }
+      if(!targetId){
+        noAccess.style.display='block';
+        return;
+      }
+
+      const passenger = users.find(u=>u.id===targetId);
+      if(!passenger){
+        noAccess.style.display='block';
+        return;
+      }
+
+      const bk = bookings.find(
+        b=>b.rideId===ride.id && b.passengerId===targetId
+      );
+      if(!bk){
+        noAccess.style.display='block';
+        return;
+      }
+
+      targetUser = passenger;
+
+      const existing = ratings.find(
+        r=>r.rideId===ride.id && r.fromUserId===userId && r.toUserId===passenger.id
+      );
+      if(existing){
+        rideInfoBox.style.display='block';
+        rideInfoBox.innerHTML =
+          '<div class="ride-title">'+
+          escapeHtml(ride.from.name)+' → '+escapeHtml(ride.to.name)+'</div>'+
+          '<div class="muted">الراكب: '+escapeHtml(passenger.name||'غير معروف')+'</div>'+
+          '<div class="muted">وقت الرحلة: '+fmtTime(ride.departAt)+'</div>';
+        alreadyMsg.style.display='block';
+        alreadyMsg.textContent =
+          'سبق أن أرسلت تقييمًا لهذا الراكب في هذه الرحلة (التقييم: '+existing.value+'/5).';
+        return;
+      }
+
+      rideInfoBox.style.display='block';
+      rideInfoBox.innerHTML =
+        '<div class="ride-title">'+
+        escapeHtml(ride.from.name)+' → '+escapeHtml(ride.to.name)+'</div>'+
+        '<div class="muted">الراكب: '+escapeHtml(passenger.name||'غير معروف')+'</div>'+
+        '<div class="muted">وقت الرحلة: '+fmtTime(ride.departAt)+'</div>';
+
+      ratingLabel.textContent = 'كم تعطي هذا الراكب في هذه الرحلة؟';
+      form.style.display='block';
+      return;
+    }
+
+    noAccess.style.display='block';
+  }
+
+  function submitRating(e){
+    e.preventDefault();
+    if(!currentRide || !currentUser || !targetUser){
+      showMsg('خطأ في تحميل بيانات التقييم.', false);
+      return;
+    }
+    if(selectedRating===0){
+      showMsg('اختاري/اختر التقييم أولاً.', false);
+      return;
+    }
+
+    const comment = document.getElementById('comment').value.trim();
+    const reasons = Array.from(selectedReasons);
+    const low = selectedRating <= 2;
+
+    const all = loadRatings();
+    const nowId = 'rt_'+Date.now();
+
+    const ratingObj = {
+      id: nowId,
+      rideId: currentRide.id,
+      value: selectedRating,
+      comment: comment,
+      reasons: reasons,
+      isLow: low,
+      fromUserId: currentUser.id,
+      fromRole: currentFromRole,         
+      toUserId: targetUser.id,
+      toRole: targetUser.role || '', 
+      createdAt: new Date().toISOString(),
+      adminStatus: low ? 'pending' : 'none'
+    };
+
+    all.push(ratingObj);
+    saveRatings(all);
+    updateUserAverage(targetUser.id, selectedRating);
+
+    showMsg('تم إرسال التقييم بنجاح. شكرًا لمشاركتك!', true);
+
+    localStorage.removeItem('rs_rate_ride_id');
+    localStorage.removeItem('rs_rate_from_role');
+    localStorage.removeItem('rs_rate_target_user_id');
+
+    setTimeout(()=>{ location.href='rideHistory.html'; }, 1200);
+  }
+
+  window.addEventListener('load', init);
+</script>
+</body>
+</html>

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>بلاغاتي</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap');
+    :root{
+      --bg:#f8f3ee;--card:#fffdf9;--border:#ddd0c8;
+      --accent:#cbb796;--accent-hover:#b29a75;
+      --text:#3b2f24;--muted:#7a6a57;
+      --danger:#d87a6b;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;padding:0;min-height:100vh;
+      background:var(--bg);
+      font-family:'Tajawal',sans-serif;
+      color:var(--text);
+      display:flex;justify-content:center;align-items:flex-start;
+    }
+    .shell{
+      margin:20px auto;
+      width:min(980px,96vw);
+      background:var(--card);
+      border-radius:16px;
+      border:1px solid var(--border);
+      box-shadow:0 10px 26px rgba(0,0,0,.1);
+      overflow:hidden;
+    }
+    .header{
+      padding:14px 18px;
+      background:var(--accent);
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .header h1{margin:0;font-size:20px;}
+    .header-sub{font-size:13px;opacity:.9}
+    .content{
+      padding:18px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:18px;
+    }
+    .left,.right{flex:1;min-width:260px}
+    .section-title{
+      font-size:15px;font-weight:700;color:var(--muted);margin-bottom:6px;
+    }
+    .muted{color:var(--muted);font-size:13px}
+    .card{
+      border:1px solid #efe6db;
+      border-radius:10px;
+      padding:10px 12px;
+      margin-bottom:10px;
+      background:#fff;
+    }
+    .field{
+      margin-bottom:10px;
+      text-align:right;
+    }
+    label{
+      display:block;
+      font-size:13px;
+      color:var(--muted);
+      margin-bottom:4px;
+    }
+    select,textarea,input[type="text"]{
+      width:100%;
+      padding:8px 9px;
+      border-radius:8px;
+      border:1px solid var(--border);
+      font-family:'Tajawal',sans-serif;
+      font-size:13px;
+      resize:vertical;
+    }
+    textarea{min-height:90px;}
+    .btn{
+      background:var(--accent);color:#fff;
+      border:none;border-radius:10px;
+      padding:9px 16px;cursor:pointer;
+      font-weight:700;font-size:14px;
+    }
+    .btn:hover{background:var(--accent-hover);}
+    .btn-ghost{
+      background:#fff;color:var(--accent);
+      border:1px solid var(--accent);
+    }
+    .btn-ghost:hover{background:#f3ebe0;}
+    .report-item-title{
+      font-size:14px;
+      font-weight:700;
+      margin-bottom:4px;
+    }
+    .report-meta{
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:4px;
+    }
+    .badge{
+      display:inline-block;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid #ddd0c8;
+      background:#eee;
+      margin-inline-start:4px;
+    }
+    .badge-open{background:#ffe9d6;border-color:#f0b784;}
+    .badge-review{background:#d6ebff;border-color:#88aedd;}
+    .badge-closed{background:#e0e0e0;border-color:#b0b0b0;}
+    .empty{
+      padding:10px;
+      font-size:13px;
+      color:var(--muted);
+      text-align:center;
+    }
+    @media(max-width:700px){
+      .header{flex-direction:column;align-items:flex-start;}
+    }
+    .back-btn{
+      background:#fff;
+      color:var(--accent);
+      border:none;
+      border-radius:999px;
+      padding:6px 12px;
+      font-size:12px;
+      cursor:pointer;
+      font-weight:700;
+      box-shadow:0 0 0 1px rgba(255,255,255,.6);
+        }
+    .back-btn:hover{
+      background:#f3ebe0;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="header">
+      <div>
+        <h1>بلاغاتي</h1>
+        <div class="header-sub" id="headerRoleText"></div>
+      </div>
+      <div class="header-sub" id="linkedRideHint"></div>
+    </div>
+
+    <button type="button" class="back-btn" onclick="goHome()">
+          الرجوع للصفحة الرئيسية
+        </button>
+    <div class="content">
+      <!-- فورم البلاغ -->
+      <div class="left">
+        <div class="section-title">إرسال بلاغ جديد</div>
+        <div class="card">
+          <div class="field">
+            <label>الرحلة المرتبطة بالبلاغ (اختياري)</label>
+            <div class="muted" id="rideSummaryText">لا توجد رحلة محددة – يمكنك وصف المشكلة في التفاصيل.</div>
+          </div>
+
+          <div class="field">
+            <label for="category">نوع البلاغ</label>
+            <select id="category">
+              <option value="سلوك السائق">سلوك السائق</option>
+              <option value="سلوك الراكب">سلوك الراكب</option>
+              <option value="مشاكل في الرحلة">مشاكل في الرحلة (تأخير، إلغاء...)</option>
+              <option value="مشاكل في الدفع">مشاكل في الدفع</option>
+              <option value="مشكلة تقنية">مشكلة تقنية في التطبيق</option>
+              <option value="أخرى" selected>أخرى</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="severity">درجة الأهمية</label>
+            <select id="severity">
+              <option value="normal">عادي</option>
+              <option value="urgent">عاجل</option>
+              <option value="critical">هام جدًا</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="details">وصف المشكلة</label>
+            <textarea id="details" placeholder="اكتبي ما حدث بالتفصيل، مثل وقت المشكلة وما إذا كان هناك شهود أو صور..."></textarea>
+          </div>
+
+          <div style="display:flex;gap:8px;justify-content:flex-start;margin-top:8px;">
+            <button class="btn" type="button" onclick="submitReport()">إرسال البلاغ</button>
+            <button class="btn btn-ghost" type="button" onclick="clearForm()">مسح النموذج</button>
+          </div>
+
+          <div class="muted" style="margin-top:8px;font-size:12px">
+            البلاغات تحفظ محليًا في جهازك، ويمكن للأدمن الاطلاع عليها من لوحة الإدارة لأغراض المشروع فقط.
+          </div>
+        </div>
+      </div>
+
+      <!-- قائمة بلاغاتي -->
+      <div class="right">
+        <div class="section-title">سجل بلاغاتي</div>
+        <div id="myReportsContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="notifications-bar.js"></script>
+  <script>
+    function loadUsers(){ try{return JSON.parse(localStorage.getItem('rs_users')||'[]');}catch(e){return[];} }
+    function loadRides(){ try{return JSON.parse(localStorage.getItem('rs_rides')||'[]');}catch(e){return[];} }
+    function loadReports(){ try{return JSON.parse(localStorage.getItem('rs_reports')||'[]');}catch(e){return[];} }
+    function saveReports(arr){ localStorage.setItem('rs_reports', JSON.stringify(arr)); }
+
+    function fmtTime(iso){ return new Date(iso).toLocaleString(); }
+
+    function getCurrentUserId(){ return localStorage.getItem('rs_current_user_id') || ''; }
+    function getCurrentRole(){ return localStorage.getItem('rs_current_role') || ''; }
+
+    function genId(prefix){
+      return prefix + '_' + Date.now().toString(36) + '_' + Math.floor(Math.random()*1e6).toString(36);
+    }
+
+    let currentUser = null;
+    let currentRole = '';
+    let linkedRide = null; 
+
+    function init(){
+      const users = loadUsers();
+      const uid = getCurrentUserId();
+      currentRole = getCurrentRole();
+
+      if(currentRole === 'admin'){
+        location.href = 'admin-reports.html';
+        return;
+      }
+
+      currentUser = users.find(u => u.id === uid) || null;
+      if(!currentUser){
+        if(currentRole === 'driver'){
+          location.href = 'loginDriver.html';
+        }else if(currentRole === 'passenger'){
+          location.href = 'loginPassenger.html';
+        }else{
+          // احتياطًا
+          location.href = 'loginPassenger.html';
+        }
+        return;
+      }
+
+      document.getElementById('headerRoleText').textContent =
+        (currentRole === 'driver' ? 'أنت مسجّل كسائق في النظام.' : 'أنت مسجّل كراكب في النظام.');
+
+      // إذا جاي من صفحة الرحلة الحالية
+      const rideId = localStorage.getItem('rs_report_ride_id');
+      if(rideId){
+        const rides = loadRides();
+        linkedRide = rides.find(r => r.id === rideId) || null;
+      }
+
+      const rideSummaryEl = document.getElementById('rideSummaryText');
+      const linkedHint = document.getElementById('linkedRideHint');
+
+      if(linkedRide){
+        const txt = (linkedRide.from?.name || 'بدون اسم') +
+                    ' → ' +
+                    (linkedRide.to?.name || 'بدون اسم') +
+                    ' · ' +
+                    fmtTime(linkedRide.departAt || new Date().toISOString());
+        rideSummaryEl.textContent = txt;
+        linkedHint.textContent = 'البلاغ مربوط بهذه الرحلة.';
+      }else{
+        rideSummaryEl.textContent = 'لا توجد رحلة محددة – يمكنك وصف المشكلة في الحقل أدناه.';
+        linkedHint.textContent = '';
+      }
+
+      renderMyReports();
+    }
+
+    function submitReport(){
+      const details = document.getElementById('details').value.trim();
+      const category = document.getElementById('category').value;
+      const severity = document.getElementById('severity').value;
+
+      if(!details){
+        alert('اكتبي وصفًا للمشكلة قبل إرسال البلاغ.');
+        return;
+      }
+
+      const reports = loadReports();
+      const nowIso = new Date().toISOString();
+
+      const report = {
+        id: genId('rep'),
+        rideId: linkedRide ? linkedRide.id : null,
+        rideSummary: linkedRide
+          ? ((linkedRide.from?.name || '') + ' → ' + (linkedRide.to?.name || ''))
+          : '',
+        reporterId: currentUser.id,
+        reporterName: currentUser.name || 'مستخدم',
+        reporterRole: currentRole,
+        category,
+        severity,
+        details,
+        status: 'open',
+        createdAt: nowIso,
+        adminNote: ''
+      };
+
+      reports.push(report);
+      saveReports(reports);
+
+      localStorage.removeItem('rs_report_ride_id');
+
+      alert('تم إرسال البلاغ بنجاح. سيتم مراجعته من قبل المسؤول.');
+      clearForm();
+
+      // نعيد تحميل القائمة
+      renderMyReports();
+    }
+
+    function clearForm(){
+      document.getElementById('category').value = 'أخرى';
+      document.getElementById('severity').value = 'normal';
+      document.getElementById('details').value = '';
+    }
+
+    function renderMyReports(){
+      const container = document.getElementById('myReportsContainer');
+      container.innerHTML = '';
+
+      const reports = loadReports().filter(r => r.reporterId === currentUser.id);
+      reports.sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
+
+      if(!reports.length){
+        const div = document.createElement('div');
+        div.className = 'empty';
+        div.textContent = 'لا توجد بلاغات مسجلة حتى الآن.';
+        container.appendChild(div);
+        return;
+      }
+
+      reports.forEach(r => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const statusText = statusToArabic(r.status);
+        const badgeClass = statusBadgeClass(r.status);
+
+        const title = document.createElement('div');
+        title.className = 'report-item-title';
+        title.textContent = r.category || 'بلاغ';
+
+        const meta = document.createElement('div');
+        meta.className = 'report-meta';
+        meta.innerHTML =
+          'التاريخ: '+ fmtTime(r.createdAt) +
+          (r.rideSummary ? ' · الرحلة: '+ r.rideSummary : '');
+
+        const statusLine = document.createElement('div');
+        statusLine.className = 'report-meta';
+        statusLine.innerHTML = 'الحالة: <span class="badge '+badgeClass+'">'+statusText+'</span>';
+
+        const sevLine = document.createElement('div');
+        sevLine.className = 'report-meta';
+        sevLine.textContent = 'درجة الأهمية: ' + severityToArabic(r.severity);
+
+        const body = document.createElement('div');
+        body.style.fontSize = '13px';
+        body.style.marginTop = '4px';
+        body.textContent = r.details;
+
+        if(r.adminNote){
+          const note = document.createElement('div');
+          note.className = 'report-meta';
+          note.style.marginTop = '6px';
+          note.textContent = 'رد المسؤول: ' + r.adminNote;
+          card.appendChild(note);
+        }
+
+        card.appendChild(title);
+        card.appendChild(meta);
+        card.appendChild(statusLine);
+        card.appendChild(sevLine);
+        card.appendChild(body);
+
+        container.appendChild(card);
+      });
+    }
+
+    function statusToArabic(st){
+      if(st === 'in_review') return 'قيد المراجعة';
+      if(st === 'closed') return 'مغلق';
+      return 'مفتوح';
+    }
+    function statusBadgeClass(st){
+      if(st === 'in_review') return 'badge-review';
+      if(st === 'closed') return 'badge-closed';
+      return 'badge-open';
+    }
+    function severityToArabic(sv){
+      if(sv === 'urgent') return 'عاجل';
+      if(sv === 'critical') return 'هام جدًا';
+      return 'عادي';
+    }
+
+    function goHome(){
+      const role = localStorage.getItem('rs_current_role') || '';
+      if(role === 'driver'){
+        location.href = 'driverHome.html';
+      }else if(role === 'passenger'){
+        location.href = 'passengerHome.html';
+      }else{
+        location.href = 'index.html'; // احتياطي
+      }
+    }
+
+    window.addEventListener('load', init);
+  </script>
+</body>
+</html>
