@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.2",
+    "htmlhint": "^1.9.2"
+  },
+  "scripts": {}
+}
